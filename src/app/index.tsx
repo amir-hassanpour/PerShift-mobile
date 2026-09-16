@@ -1,17 +1,7 @@
-import { Text, View, StyleSheet } from "react-native";
+import Builder from "./Builder";
 
-export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+const builder = new Builder();
+
+export default function index() {
+  return builder.makeSignupView();
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

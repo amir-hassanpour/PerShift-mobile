@@ -1,12 +1,13 @@
 import { UserSignupController } from "@/interface-adapter/user/signup/UserSignupController";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
-import { Component } from "react";
+import { Component, type ReactElement } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 type SignupViewProps = {
   userSignupController: UserSignupController;
   userSignupViewModel: UserSignupViewModel;
+  buildMainPage: () => ReactElement;
 };
 
 type SignupViewState = {
@@ -15,9 +16,16 @@ type SignupViewState = {
   email: string;
   username: string;
   password: string;
+  confirmPassword: string;
 };
 
-type SignupInput = "firstName" | "lastName" | "email" | "username" | "password";
+type SignupInput =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "username"
+  | "password"
+  | "confirmPassword";
 
 const errorsByInput: Record<SignupInput, UserSignupState[]> = {
   firstName: [UserSignupState.FIRST_NAME_REQUIRED],
@@ -33,6 +41,7 @@ const errorsByInput: Record<SignupInput, UserSignupState[]> = {
     UserSignupState.USERNAME_ALREADY_EXISTS,
   ],
   password: [UserSignupState.PASSWORD_REQUIRED, UserSignupState.WEAK_PASSWORD],
+  confirmPassword: [UserSignupState.PASSWORDS_DO_NOT_MATCH],
 };
 
 export class SignupView extends Component<SignupViewProps, SignupViewState> {
@@ -42,6 +51,7 @@ export class SignupView extends Component<SignupViewProps, SignupViewState> {
     email: "",
     username: "",
     password: "",
+    confirmPassword: "",
   };
 
   getInputError(input: SignupInput): UserSignupState | undefined {
@@ -53,7 +63,8 @@ export class SignupView extends Component<SignupViewProps, SignupViewState> {
   }
 
   handleSubmit = async (): Promise<void> => {
-    const { firstName, lastName, email, username, password } = this.state;
+    const { firstName, lastName, email, username, password, confirmPassword } =
+      this.state;
 
     await this.props.userSignupController.signupUser(
       firstName,
@@ -61,17 +72,22 @@ export class SignupView extends Component<SignupViewProps, SignupViewState> {
       email,
       username,
       password,
+      confirmPassword,
     );
 
     this.forceUpdate();
   };
 
   render() {
+    if (this.props.userSignupViewModel.state === UserSignupState.SUCCESS) {
+      return this.props.buildMainPage();
+    }
     const firstNameError = this.getInputError("firstName");
     const lastNameError = this.getInputError("lastName");
     const emailError = this.getInputError("email");
     const usernameError = this.getInputError("username");
     const passwordError = this.getInputError("password");
+    const confirmPasswordError = this.getInputError("confirmPassword");
 
     return (
       <View style={styles.container}>
@@ -151,6 +167,25 @@ export class SignupView extends Component<SignupViewProps, SignupViewState> {
 
           {passwordError && (
             <Text style={styles.errorText}>{passwordError}</Text>
+          )}
+        </View>
+
+        <View style={styles.field}>
+          <TextInput
+            style={[
+              styles.input,
+              confirmPasswordError ? styles.inputError : undefined,
+            ]}
+            placeholder="Confirm password"
+            secureTextEntry
+            value={this.state.confirmPassword}
+            onChangeText={(confirmPassword) =>
+              this.setState({ confirmPassword })
+            }
+          />
+
+          {confirmPasswordError && (
+            <Text style={styles.errorText}>{confirmPasswordError}</Text>
           )}
         </View>
 

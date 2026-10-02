@@ -13,12 +13,14 @@ export class UserSignupController {
     email: string,
     username: string,
     password: string,
+    confirmPassword: String,
   ) {
     await this.userSignupInteractor.signupUser({
       firstName: first_name,
       lastName: last_name,
       email: email,
       password: password,
+      confirmPassword: confirmPassword,
       username: username,
     });
   }

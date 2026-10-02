@@ -35,8 +35,4 @@ export class User {
     this.email = props.email.trim().toLowerCase();
     this.createdAt = props.createdAt;
   }
-
-  public get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
 }

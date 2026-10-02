@@ -20,7 +20,8 @@ export type UserSignUpErrorCode =
   | "WEAK_PASSWORD"
   | "EMAIL_ALREADY_EXISTS"
   | "USERNAME_ALREADY_EXISTS"
-  | "SIGNUP_FAILED";
+  | "SIGNUP_FAILED"
+  | "PASSWORDS_DO_NOT_MATCH";
 
 export class UserSignUpError extends Error {
   constructor(
@@ -74,6 +75,13 @@ export class UserSignupDataAccessObject implements UserSignupDataAccessInterface
     if (!input.password) {
       throw new UserSignUpError("PASSWORD_REQUIRED", "Password is required");
     }
+
+    if (input.password.trim != input.confirmPassword.trim) {
+      throw new UserSignUpError(
+        "PASSWORDS_DO_NOT_MATCH",
+        "Passwords not matching",
+      );
+    }
   }
 
   async storeSignupInformation(input: UserSignupInputData): Promise<void> {
@@ -95,6 +103,7 @@ export class UserSignupDataAccessObject implements UserSignupDataAccessInterface
     });
 
     if (error) {
+      console.log(error.status, error.name, error.message);
       switch (error.code) {
         case "email_address_invalid":
           throw new UserSignUpError(

@@ -51,11 +51,6 @@ export default class Builder {
       this.laodingMainPageInteractor,
     );
 
-    this.mainPageView = new MainPageView({
-      controller: this.laodingMainPageController,
-      viewModel: this.loadingMainPageViewModel,
-    });
-
     return (
       <MainPageView
         controller={this.laodingMainPageController}
@@ -77,17 +72,12 @@ export default class Builder {
     this.userSignupController = new UserSignupController(
       this.userSignupInteractor,
     );
-    this.signupView = new SignupView({
-      userSignupController: this.userSignupController,
-      userSignupViewModel: this.userSignupViewModel,
-      buildMainPage: this.makeMainPageView,
-    });
 
     return (
       <SignupView
         userSignupController={this.userSignupController}
         userSignupViewModel={this.userSignupViewModel}
-        buildMainPage={this.makeMainPageView}
+        buildMainPage={() => this.makeMainPageView()}
       />
     );
   }

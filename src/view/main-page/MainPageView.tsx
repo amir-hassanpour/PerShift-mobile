@@ -15,8 +15,25 @@ type MainPageProps = {
 };
 
 export class MainPageView extends Component<MainPageProps> {
+  private unsubscribe?: () => void;
+
+  componentDidMount(): void {
+    this.unsubscribe = this.props.viewModel.subscribe(() => {
+      this.forceUpdate();
+    });
+
+    try {
+      this.props.controller.loadMainPage();
+    } catch (error) {
+      console.error("Failed to load main page:", error);
+    }
+  }
+
+  componentWillUnmount(): void {
+    this.unsubscribe?.();
+  }
+
   renderMainContent() {
-    this.props.controller.loadMainPage();
     const { state, shifts, requestedBusinesses, business } = {
       state: this.props.viewModel.state,
       shifts: this.props.viewModel.shifts,
@@ -81,20 +98,55 @@ export class MainPageView extends Component<MainPageProps> {
           </Text>
         </View>
 
-        {showRequests && requestedBusinesses.length > 0 ? (
-          <View style={styles.requestList}>
-            {requestedBusinesses.map((business) => (
-              <View key={business.id} style={styles.listItem}>
+        <View style={styles.requestList}>
+          {requestedBusinesses.map((business) => (
+            <View
+              key={business.id}
+              style={[styles.listItem, styles.requestRow]}
+            >
+              <View style={styles.requestInfo}>
                 <Text style={styles.itemTitle}>{business.name}</Text>
                 <Text style={styles.itemDetail}>Pending</Text>
               </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Nothing at the moment</Text>
-          </View>
-        )}
+
+              <View style={styles.requestActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Accept ${business.name}`}
+                  onPress={() => {}}
+                  style={({ pressed }) => [
+                    styles.requestActionButton,
+                    pressed && { opacity: 0.6 },
+                  ]}
+                >
+                  <SymbolView
+                    name={{ ios: "checkmark", android: "check", web: "check" }}
+                    tintColor="#2563EB"
+                    size={20}
+                    style={{ width: 20, height: 20 }}
+                  />
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Decline ${business.name}`}
+                  onPress={() => {}}
+                  style={({ pressed }) => [
+                    styles.requestActionButton,
+                    pressed && { opacity: 0.6 },
+                  ]}
+                >
+                  <SymbolView
+                    name={{ ios: "xmark", android: "close", web: "close" }}
+                    tintColor="#718099"
+                    size={20}
+                    style={{ width: 20, height: 20 }}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
 
         {showCreateBusiness && (
           <Pressable
@@ -102,7 +154,7 @@ export class MainPageView extends Component<MainPageProps> {
             onPress={() => {}}
             style={({ pressed }) => [
               styles.createButton,
-              pressed && styles.itemPressed,
+              pressed && styles.createButtonPressed,
             ]}
           >
             <Text style={styles.createButtonText}>
@@ -278,16 +330,45 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   createButton: {
-    minHeight: 48,
+    minHeight: 50,
     alignItems: "center",
     justifyContent: "center",
-    padding: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     marginTop: 24,
     borderRadius: 14,
+    backgroundColor: "#2563EB",
+  },
+  createButtonPressed: {
+    backgroundColor: "#1D4ED8",
+    transform: [{ scale: 0.98 }],
   },
   createButtonText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#2563EB",
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  requestRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  requestInfo: {
+    flex: 1,
+  },
+  requestActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  requestActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2EAF7",
+    backgroundColor: "#F5F8FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

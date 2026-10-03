@@ -28,25 +28,37 @@ export class BussinessDataAccessObject implements LoadingMainPageDataAccessInter
       .from("business_role_assignment")
       .select(
         `
-        business_name,
-      profile_id,
-      role_id,
-      role_accpeted
+        business!inner (
+          id,
+          business_name
+        ),
+        profile_id,
+        role_id,
+        role_accepted
+        `,
       )
-    `,
-      )
-      .eq("business_role_assignment.profile_id", user.id)
-      .eq("business_role_assignment.status", "pending")
-      .order("id")
+      .eq("profile_id", user.id)
+      .eq("role_accepted", "pending")
       .limit(5);
 
     if (error) {
       throw error;
     }
 
-    return data.map(
-      (business) => new BusinessRequested(business.id, business.business_name),
-    );
+    return data
+      .flatMap((row) => {
+        const businesses = Array.isArray(row.business)
+          ? row.business
+          : [row.business];
+
+        return businesses
+          .filter((business) => business != null)
+          .map(
+            (business) =>
+              new BusinessRequested(business.id, business.business_name),
+          );
+      })
+      .slice(0, 5);
   }
 
   async loadMainPage(): Promise<LoadMainPage> {

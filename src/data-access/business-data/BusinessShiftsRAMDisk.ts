@@ -48,7 +48,6 @@ export class BusinessShiftsRAMDisk {
   }
 
   async getBusinessShifts(business: Business): Promise<Shift[]> {
-    console.log("Getting shifts for business:", business.id);
     const key = `${SHIFTS_KEY}:${business.id}`;
     const storedValue = await Storage.getItem(key);
 

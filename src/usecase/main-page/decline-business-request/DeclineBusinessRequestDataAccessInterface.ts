@@ -1,9 +1,15 @@
-export type DeclineBusinessRequest = {
+import { BusinessRequested } from "@/entity/BusinessRequested";
+
+export type DeclineBusinessRequestInput = {
   businessId: string;
+};
+
+export type DeclineBusinessRequestOutput = {
+  businessRequested: BusinessRequested[];
 };
 
 export interface DeclineBusinessRequestDataAccessInterface {
   declineBusinessRequest(
-    declineBusinessRequest: DeclineBusinessRequest,
-  ): Promise<void>;
+    declineBusinessRequest: DeclineBusinessRequestInput,
+  ): Promise<DeclineBusinessRequestOutput>;
 }

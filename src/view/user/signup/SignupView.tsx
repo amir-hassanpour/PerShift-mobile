@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 type SignupViewProps = {
   userSignupController: UserSignupController;
   userSignupViewModel: UserSignupViewModel;
-  buildMainPage: () => ReactElement;
+  buildMainPage: ReactElement;
 };
 
 type SignupViewState = {
@@ -80,7 +80,7 @@ export class SignupView extends Component<SignupViewProps, SignupViewState> {
 
   render() {
     if (this.props.userSignupViewModel.state === UserSignupState.SUCCESS) {
-      return this.props.buildMainPage();
+      return this.props.buildMainPage;
     }
     const firstNameError = this.getInputError("firstName");
     const lastNameError = this.getInputError("lastName");

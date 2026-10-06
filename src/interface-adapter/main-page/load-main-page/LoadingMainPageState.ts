@@ -1,4 +1,5 @@
 export enum LoadingMainPageStates {
+  IDLE = "IDLE",
   NO_BUSINESS = "NO_BUSINESS",
   NO_REQUEST = "NO_REQUEST",
   NO_SHIFT_YES_BUSINESS = "NO_SHIFT_YES_BUSINESS",

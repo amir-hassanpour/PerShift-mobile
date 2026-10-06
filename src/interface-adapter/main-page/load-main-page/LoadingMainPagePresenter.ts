@@ -1,7 +1,7 @@
 import { LoadingMainPageOutputBoundary } from "@/usecase/main-page/loading-main-page/LoadingMainPageOutputBoundary";
 import { LoadingMainPageOutputData } from "@/usecase/main-page/loading-main-page/LoadingMainPageOutputData";
+import { LoadingMainPageViewModel } from "../LoadingMainPageViewModel";
 import { LoadingMainPageStates } from "./LoadingMainPageState";
-import { LoadingMainPageViewModel } from "./LoadingMainPageViewModel";
 
 export class LoadingMainPagePresenter implements LoadingMainPageOutputBoundary {
   viewModel: LoadingMainPageViewModel;

@@ -3,13 +3,104 @@ import { Business } from "@/entity/Business";
 import { BusinessRequested } from "@/entity/BusinessRequested";
 import { Shift } from "@/entity/Shift";
 import {
+  DeclineBusinessRequestDataAccessInterface,
+  DeclineBusinessRequestInput,
+  DeclineBusinessRequestOutput,
+} from "@/usecase/main-page/decline-business-request/DeclineBusinessRequestDataAccessInterface";
+
+import {
+  AcceptBusinessRequestDataAccessInterface,
+  Acceptinput,
+  AcceptOutput,
+} from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
+import {
   LoadingMainPageDataAccessInterface,
   LoadMainPage,
 } from "@/usecase/main-page/loading-main-page/LoadingMainPageDataAccessInterface";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "./BusinessShiftsRAMDisk";
 
-export class BussinessDataAccessObject implements LoadingMainPageDataAccessInterface {
+export class BussinessDataAccessObject
+  implements
+    LoadingMainPageDataAccessInterface,
+    DeclineBusinessRequestDataAccessInterface,
+    AcceptBusinessRequestDataAccessInterface
+{
+  async acceptBusinessRequest(input: Acceptinput): Promise<AcceptOutput> {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in.");
+
+    const { data, error } = await supabase
+      .from("business_role_assignment")
+      .update({ role_accepted: "accepted" })
+      .eq("business_name", input.businessId)
+      .eq("profile_id", user.id)
+      .eq("role_accepted", "pending")
+      .select("profile_id");
+
+    let newBusinessAccepted = await this.getbusinessInformation(
+      input.businessId,
+    );
+    new BusinessRAMDisk().savaBusiness(newBusinessAccepted);
+
+    let reloadMainPage = await this.loadMainPage();
+
+    return {
+      shifts: reloadMainPage.shifts,
+      businesses: reloadMainPage.businesses,
+      requestedBusinesses: reloadMainPage.businessRequested,
+    };
+  }
+
+  async getbusinessInformation(businessID: string): Promise<Business> {
+    const { data, error } = await supabase
+      .from("business")
+      .select("id, business_name")
+      .eq("id", businessID)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      throw new Error("Business not found or you do not have access.");
+    }
+
+    return new Business(data.id, data.business_name, new Date());
+  }
+
+  async declineBusinessRequest(
+    input: DeclineBusinessRequestInput,
+  ): Promise<DeclineBusinessRequestOutput> {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in.");
+
+    const { data, error } = await supabase
+      .from("business_role_assignment")
+      .update({ role_accepted: "rejected" })
+      .eq("business_name", input.businessId)
+      .eq("profile_id", user.id)
+      .eq("role_accepted", "pending")
+      .select("profile_id");
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      throw new Error("No pending request was updated.");
+    }
+
+    return { businessRequested: await this.getBusinessRequested() };
+  }
+
   async getBusinessRequested(): Promise<BusinessRequested[]> {
     const {
       data: { user },

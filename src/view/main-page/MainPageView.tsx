@@ -5,13 +5,17 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import NavigationBar from "../navigation-bar/NavigationBar";
 
+import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
+import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/decline-business-request/DeclineBusinessRequestController";
 import { LoadingMainPageController } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageController";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
-import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageViewModel";
+import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
 
 type MainPageProps = {
   controller: LoadingMainPageController;
   viewModel: LoadingMainPageViewModel;
+  declineBusinessRequestController: DeclineBusinessRequestController;
+  acceptBusinessRequestController: AcceptBusinessRequestController;
 };
 
 export class MainPageView extends Component<MainPageProps> {
@@ -85,7 +89,7 @@ export class MainPageView extends Component<MainPageProps> {
       );
     }
 
-    const showRequests = state === LoadingMainPageStates.NO_BUSINESS;
+    const showRequests = state === "NO_BUSINESS";
 
     const showCreateBusiness =
       showRequests || state === LoadingMainPageStates.NO_REQUEST;
@@ -113,7 +117,11 @@ export class MainPageView extends Component<MainPageProps> {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Accept ${business.name}`}
-                  onPress={() => {}}
+                  onPress={() => {
+                    this.props.acceptBusinessRequestController.acceptBusinessRequest(
+                      business.id,
+                    );
+                  }}
                   style={({ pressed }) => [
                     styles.requestActionButton,
                     pressed && { opacity: 0.6 },
@@ -130,7 +138,11 @@ export class MainPageView extends Component<MainPageProps> {
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`Decline ${business.name}`}
-                  onPress={() => {}}
+                  onPress={() => {
+                    this.props.declineBusinessRequestController.declineBusinessRequest(
+                      business.id,
+                    );
+                  }}
                   style={({ pressed }) => [
                     styles.requestActionButton,
                     pressed && { opacity: 0.6 },

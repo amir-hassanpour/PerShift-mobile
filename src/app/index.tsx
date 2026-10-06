@@ -57,6 +57,5 @@ export default function Index() {
       </View>
     );
   }
-  console.log("Rendering screen:", screen);
   return screen;
 }

@@ -1,4 +1,4 @@
-import type { Business } from "@/entity/Business";
+import { Business } from "@/entity/Business";
 import Storage from "expo-sqlite/kv-store";
 
 const BUSINESSES_KEY = "businesses";
@@ -21,14 +21,24 @@ export class BusinessRAMDisk {
       businesses[index] = business;
     } else {
       if (businesses.length >= MAX_BUSINESSES) {
-        throw new Error("Cannot save more than five businesses");
+        let oldestIndex = 0;
+
+        for (let i = 1; i < businesses.length; i++) {
+          if (
+            businesses[i].lastCheckedIn.getTime() <
+            businesses[oldestIndex].lastCheckedIn.getTime()
+          ) {
+            oldestIndex = i;
+          }
+        }
+
+        businesses.splice(oldestIndex, 1);
       }
 
       businesses.push(business);
     }
 
     await Storage.setItem(BUSINESSES_KEY, JSON.stringify(businesses));
-
     this.businesses = businesses;
   }
 

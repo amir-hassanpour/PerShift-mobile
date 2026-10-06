@@ -9,7 +9,7 @@ export class AcceptBusinessRequestController {
     this.interactor = interactor;
   }
 
-  async acceptBusinessRequestController(businessID: string) {
+  acceptBusinessRequest(businessID: string) {
     let InputData: AcceptBusinessRequestInputData = {
       businessId: businessID,
     };

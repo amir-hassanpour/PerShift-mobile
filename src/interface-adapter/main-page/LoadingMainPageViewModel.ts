@@ -28,7 +28,11 @@ export class LoadingMainPageViewModel extends ViewModel {
   setDeclineBusinessRequestViewModel(
     businessRequested: BusinessRequested[],
   ): void {
-    this.setLoadingMainPageViewModel([], businessRequested, []);
+    this.setLoadingMainPageViewModel(
+      this.businesses,
+      businessRequested,
+      this.shifts,
+    );
   }
 
   setLoadingMainPageViewModel(
@@ -39,7 +43,9 @@ export class LoadingMainPageViewModel extends ViewModel {
     this.businessRequested = busReq;
     this.businesses = bus;
     this.shifts = shifts;
+  }
 
+  firePropertyChange(): void {
     super.firePropertyChange();
   }
 }

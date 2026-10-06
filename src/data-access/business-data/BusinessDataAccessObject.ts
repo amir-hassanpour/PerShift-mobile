@@ -27,6 +27,7 @@ export class BussinessDataAccessObject
     AcceptBusinessRequestDataAccessInterface
 {
   async acceptBusinessRequest(input: Acceptinput): Promise<AcceptOutput> {
+    console.log();
     const {
       data: { user },
       error: authError,
@@ -46,7 +47,8 @@ export class BussinessDataAccessObject
     let newBusinessAccepted = await this.getbusinessInformation(
       input.businessId,
     );
-    new BusinessRAMDisk().savaBusiness(newBusinessAccepted);
+
+    new BusinessRAMDisk().saveBusiness(newBusinessAccepted);
 
     let reloadMainPage = await this.loadMainPage();
 
@@ -161,13 +163,16 @@ export class BussinessDataAccessObject
     let allBusinessRequested = await this.getBusinessRequested();
 
     let defaultBusiness: Business | null = null;
-    let mostRecentDate: Date | null = null;
+    let mostRecentDate: Date | null | string = null;
 
     for (const business of allBusinesses) {
       if (mostRecentDate === null) {
         mostRecentDate = business.lastCheckedIn;
       } else {
-        if (business.lastCheckedIn.getTime() > mostRecentDate.getTime()) {
+        if (
+          new Date(business.lastCheckedIn).getTime() >
+          new Date(mostRecentDate).getTime()
+        ) {
           defaultBusiness = business;
           break;
         }

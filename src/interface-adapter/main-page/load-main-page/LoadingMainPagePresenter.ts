@@ -33,10 +33,12 @@ export class LoadingMainPagePresenter implements LoadingMainPageOutputBoundary {
       businessRequested,
       shifts,
     );
+    this.viewModel.firePropertyChange();
   }
 
   async prepareForFailureView(error: string): Promise<void> {
     this.viewModel.state = LoadingMainPageStates.FAILURE;
     this.viewModel.setLoadingMainPageViewModel([], [], []);
+    this.viewModel.firePropertyChange();
   }
 }

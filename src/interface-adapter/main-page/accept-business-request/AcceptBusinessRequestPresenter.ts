@@ -20,9 +20,11 @@ export class AcceptBusinessRequestPresenter implements AcceptBusinessRequestOutp
       requestedBusinesses,
       shifts,
     );
+    this.viewModel.firePropertyChange();
   }
 
   prepareForFailureView(error: Error): void {
     console.log(error.message);
+    this.viewModel.firePropertyChange();
   }
 }

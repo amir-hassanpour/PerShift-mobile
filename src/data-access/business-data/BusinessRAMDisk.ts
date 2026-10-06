@@ -4,14 +4,30 @@ import Storage from "expo-sqlite/kv-store";
 const BUSINESSES_KEY = "businesses";
 const MAX_BUSINESSES = 5;
 
+type StoredBusiness = {
+  id: string;
+  name: string;
+  lastCheckedIn: string;
+};
+
 export class BusinessRAMDisk {
   private businesses: Business[] = [];
 
-  async savaBusiness(business: Business): Promise<void> {
+  async deleteBusinesses(): Promise<void> {
+    await Storage.setItem(BUSINESSES_KEY, JSON.stringify([]));
+    this.businesses = [];
+  }
+
+  async saveBusiness(business: Business): Promise<void> {
     const storedValue = await Storage.getItem(BUSINESSES_KEY);
 
-    const businesses: Business[] =
+    const storedBusinesses: StoredBusiness[] =
       storedValue === null ? [] : JSON.parse(storedValue);
+
+    const businesses: Business[] = storedBusinesses.map(
+      (stored) =>
+        new Business(stored.id, stored.name, new Date(stored.lastCheckedIn)),
+    );
 
     const index = businesses.findIndex(
       (existing) => existing.id === business.id,

@@ -1,3 +1,4 @@
+import { BusinessRAMDisk } from "@/data-access/business-data/BusinessRAMDisk";
 import { supabase } from "@/data-access/supabase/client";
 import { useEffect, useState, type ReactElement } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -13,6 +14,7 @@ export default function Index() {
     let cancelled = false;
 
     async function loadInitialScreen() {
+      new BusinessRAMDisk().deleteBusinesses();
       try {
         const { data, error } = await supabase.auth.getSession();
         console.log(data?.session?.user.id);

@@ -17,9 +17,11 @@ export class DeclineBusinessRequestPresenter implements DeclineBusinessRequestOu
     this.viewModel.setDeclineBusinessRequestViewModel(
       outputData.businessRequested,
     );
+    this.viewModel.firePropertyChange();
   }
 
   async prepareForFailureView(error: string): Promise<void> {
     this.viewModel.state = DeclineBusinessRequestState.FAILURE;
+    this.viewModel.firePropertyChange();
   }
 }

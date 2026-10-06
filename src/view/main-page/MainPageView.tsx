@@ -89,8 +89,9 @@ export class MainPageView extends Component<MainPageProps> {
       );
     }
 
-    const showRequests = state === "NO_BUSINESS";
-
+    const showRequests =
+      business.length === 0 || state === LoadingMainPageStates.NO_BUSINESS;
+    console.log(business);
     const showCreateBusiness =
       showRequests || state === LoadingMainPageStates.NO_REQUEST;
 
@@ -101,64 +102,69 @@ export class MainPageView extends Component<MainPageProps> {
             {showRequests ? "Requested businesses" : "Your shifts"}
           </Text>
         </View>
+        {showRequests && (
+          <View style={styles.requestList}>
+            {requestedBusinesses.map((business) => (
+              <View
+                key={business.id}
+                style={[styles.listItem, styles.requestRow]}
+              >
+                <View style={styles.requestInfo}>
+                  <Text style={styles.itemTitle}>{business.name}</Text>
+                  <Text style={styles.itemDetail}>Pending</Text>
+                </View>
 
-        <View style={styles.requestList}>
-          {requestedBusinesses.map((business) => (
-            <View
-              key={business.id}
-              style={[styles.listItem, styles.requestRow]}
-            >
-              <View style={styles.requestInfo}>
-                <Text style={styles.itemTitle}>{business.name}</Text>
-                <Text style={styles.itemDetail}>Pending</Text>
+                <View style={styles.requestActions}>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Accept ${business.name}`}
+                    onPress={() => {
+                      this.props.acceptBusinessRequestController.acceptBusinessRequest(
+                        business.id,
+                      );
+                    }}
+                    style={({ pressed }) => [
+                      styles.requestActionButton,
+                      pressed && { opacity: 0.6 },
+                    ]}
+                  >
+                    <SymbolView
+                      name={{
+                        ios: "checkmark",
+                        android: "check",
+                        web: "check",
+                      }}
+                      tintColor="#2563EB"
+                      size={20}
+                      style={{ width: 20, height: 20 }}
+                    />
+                  </Pressable>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Decline ${business.name}`}
+                    onPress={() => {
+                      this.props.declineBusinessRequestController.declineBusinessRequest(
+                        business.id,
+                      );
+                    }}
+                    style={({ pressed }) => [
+                      styles.requestActionButton,
+                      pressed && { opacity: 0.6 },
+                    ]}
+                  >
+                    <SymbolView
+                      name={{ ios: "xmark", android: "close", web: "close" }}
+                      tintColor="#718099"
+                      size={20}
+                      style={{ width: 20, height: 20 }}
+                    />
+                  </Pressable>
+                </View>
               </View>
-
-              <View style={styles.requestActions}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Accept ${business.name}`}
-                  onPress={() => {
-                    this.props.acceptBusinessRequestController.acceptBusinessRequest(
-                      business.id,
-                    );
-                  }}
-                  style={({ pressed }) => [
-                    styles.requestActionButton,
-                    pressed && { opacity: 0.6 },
-                  ]}
-                >
-                  <SymbolView
-                    name={{ ios: "checkmark", android: "check", web: "check" }}
-                    tintColor="#2563EB"
-                    size={20}
-                    style={{ width: 20, height: 20 }}
-                  />
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Decline ${business.name}`}
-                  onPress={() => {
-                    this.props.declineBusinessRequestController.declineBusinessRequest(
-                      business.id,
-                    );
-                  }}
-                  style={({ pressed }) => [
-                    styles.requestActionButton,
-                    pressed && { opacity: 0.6 },
-                  ]}
-                >
-                  <SymbolView
-                    name={{ ios: "xmark", android: "close", web: "close" }}
-                    tintColor="#718099"
-                    size={20}
-                    style={{ width: 20, height: 20 }}
-                  />
-                </Pressable>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
         {showCreateBusiness && (
           <Pressable

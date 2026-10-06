@@ -1,5 +1,5 @@
 export enum DeclineBusinessRequestState {
   IDLE = "IDLE",
-  SUCCESS = "NO_BUSINESS",
+  SUCCESS = "SUCCESS",
   FAILURE = "FAILURE",
 }

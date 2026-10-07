@@ -7,11 +7,11 @@ export class DeclineBusinessRequestController {
     this.interactor = interactor;
   }
 
-  declineBusinessRequest(businessId: string) {
+  async declineBusinessRequest(businessId: string) {
     const inputData = {
       businessId: businessId,
     };
 
-    this.interactor.declineBusinessRequest(inputData);
+    await this.interactor.declineBusinessRequest(inputData);
   }
 }

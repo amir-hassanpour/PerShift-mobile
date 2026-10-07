@@ -9,11 +9,11 @@ export class AcceptBusinessRequestController {
     this.interactor = interactor;
   }
 
-  acceptBusinessRequest(businessID: string) {
+  async acceptBusinessRequest(businessID: string) {
     let InputData: AcceptBusinessRequestInputData = {
       businessId: businessID,
     };
 
-    this.interactor.acceptBusinessRequest(InputData);
+    await this.interactor.acceptBusinessRequest(InputData);
   }
 }

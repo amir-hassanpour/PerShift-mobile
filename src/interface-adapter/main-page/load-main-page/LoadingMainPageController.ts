@@ -7,7 +7,7 @@ export class LoadingMainPageController {
     this.loadingMainPageInteractor = loadMainPageInteractor;
   }
 
-  loadMainPage() {
-    this.loadingMainPageInteractor.loadMainPage();
+  async loadMainPage() {
+    await this.loadingMainPageInteractor.loadMainPage();
   }
 }

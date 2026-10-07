@@ -18,7 +18,7 @@ import {
   LoadMainPage,
 } from "@/usecase/main-page/loading-main-page/LoadingMainPageDataAccessInterface";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
-import { BusinessShiftsRAMDisk } from "./BusinessShiftsRAMDisk";
+import { BusinessShiftsRAMDisk } from "./shift/BusinessShiftsRAMDisk";
 
 export class BussinessDataAccessObject
   implements
@@ -27,7 +27,6 @@ export class BussinessDataAccessObject
     AcceptBusinessRequestDataAccessInterface
 {
   async acceptBusinessRequest(input: Acceptinput): Promise<AcceptOutput> {
-    console.log();
     const {
       data: { user },
       error: authError,
@@ -48,7 +47,7 @@ export class BussinessDataAccessObject
       input.businessId,
     );
 
-    new BusinessRAMDisk().saveBusiness(newBusinessAccepted);
+    await new BusinessRAMDisk().saveBusiness(newBusinessAccepted);
 
     let reloadMainPage = await this.loadMainPage();
 

@@ -9,7 +9,7 @@ export class ViewModel {
     };
   }
 
-  firePropertyChange(): void {
+  async firePropertyChange(): Promise<void> {
     for (const listener of this.listeners) {
       listener();
     }

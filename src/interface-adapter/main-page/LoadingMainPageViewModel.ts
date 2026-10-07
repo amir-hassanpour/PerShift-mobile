@@ -45,7 +45,7 @@ export class LoadingMainPageViewModel extends ViewModel {
     this.shifts = shifts;
   }
 
-  firePropertyChange(): void {
+  async firePropertyChange(): Promise<void> {
     super.firePropertyChange();
   }
 }

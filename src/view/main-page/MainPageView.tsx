@@ -91,7 +91,6 @@ export class MainPageView extends Component<MainPageProps> {
 
     const showRequests =
       business.length === 0 || state === LoadingMainPageStates.NO_BUSINESS;
-    console.log(business);
     const showCreateBusiness =
       showRequests || state === LoadingMainPageStates.NO_REQUEST;
 
@@ -118,8 +117,8 @@ export class MainPageView extends Component<MainPageProps> {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Accept ${business.name}`}
-                    onPress={() => {
-                      this.props.acceptBusinessRequestController.acceptBusinessRequest(
+                    onPress={async () => {
+                      await this.props.acceptBusinessRequestController.acceptBusinessRequest(
                         business.id,
                       );
                     }}
@@ -143,8 +142,8 @@ export class MainPageView extends Component<MainPageProps> {
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Decline ${business.name}`}
-                    onPress={() => {
-                      this.props.declineBusinessRequestController.declineBusinessRequest(
+                    onPress={async () => {
+                      await this.props.declineBusinessRequestController.declineBusinessRequest(
                         business.id,
                       );
                     }}

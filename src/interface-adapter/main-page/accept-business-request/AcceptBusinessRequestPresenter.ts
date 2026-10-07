@@ -23,7 +23,7 @@ export class AcceptBusinessRequestPresenter implements AcceptBusinessRequestOutp
     this.viewModel.firePropertyChange();
   }
 
-  prepareForFailureView(error: Error): void {
+  async prepareForFailureView(error: Error): Promise<void> {
     console.log(error.message);
     this.viewModel.firePropertyChange();
   }

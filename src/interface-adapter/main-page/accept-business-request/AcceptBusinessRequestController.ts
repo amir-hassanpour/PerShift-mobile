@@ -13,7 +13,7 @@ export class AcceptBusinessRequestController {
     let InputData: AcceptBusinessRequestInputData = {
       businessId: businessID,
     };
-
+    console.log(businessID);
     await this.interactor.acceptBusinessRequest(InputData);
   }
 }

@@ -1,3 +1,4 @@
+import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { supabase } from "../data-access/supabase/client";
 
 export type NewShift = {
@@ -10,7 +11,17 @@ export type NewShift = {
   id: string;
 };
 
+export type Props = {
+  controller: NewShiftController;
+};
+
 export class ShiftDataBaseSubscribe {
+  private controller: NewShiftController;
+
+  constructor({ controller }: Props) {
+    this.controller = controller;
+  }
+
   async subscribeNewShift() {
     const {
       data: { user },
@@ -26,7 +37,7 @@ export class ShiftDataBaseSubscribe {
     }
 
     const channel = supabase
-      .channel(`shift-assignments:${user.id}`)
+      .channel(`shift_assignments:${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -36,6 +47,7 @@ export class ShiftDataBaseSubscribe {
           filter: `profile_id=eq.${user.id}`,
         },
         async (payload) => {
+          console.log("Assignment event received:", payload.new);
           try {
             const { data, error } = await supabase
               .from("shift")
@@ -46,7 +58,6 @@ export class ShiftDataBaseSubscribe {
             end_time,
             latitude,
             longitude,
-            description,
             business_id
           `,
               )
@@ -61,15 +72,22 @@ export class ShiftDataBaseSubscribe {
               latitude: data.latitude === null ? null : Number(data.latitude),
               longitude:
                 data.longitude === null ? null : Number(data.longitude),
-              description: data.description ?? "",
               businessid: data.business_id,
               id: data.id,
             };
+            console.log("amirmahdi you did it");
+            await this.controller.newShiftController(shift);
           } catch (error) {
             console.error("Could not load the newly assigned shift:", error);
           }
         },
       )
-      .subscribe();
+      .subscribe((status, error) => {
+        console.log("Shift subscription status:", status);
+
+        if (error) {
+          console.error("Shift subscription error:", error);
+        }
+      });
   }
 }

@@ -155,32 +155,18 @@ export class BussinessDataAccessObject
 
   async loadMainPage(): Promise<LoadMainPage> {
     const businessRAMDisk = new BusinessRAMDisk();
-    const businessShiftsRAMDisk = new BusinessShiftsRAMDisk();
+
+    const mostrecentBusiness =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
 
     const allBusinesses = await businessRAMDisk.getBusinesses();
     let allShifts: Shift[] = [];
     let allBusinessRequested = await this.getBusinessRequested();
 
-    let defaultBusiness: Business | null = null;
-    let mostRecentDate: Date | null | string = null;
-
-    for (const business of allBusinesses) {
-      if (mostRecentDate === null) {
-        mostRecentDate = business.lastCheckedIn;
-      } else {
-        if (
-          new Date(business.lastCheckedIn).getTime() >
-          new Date(mostRecentDate).getTime()
-        ) {
-          defaultBusiness = business;
-          break;
-        }
-      }
-    }
-
-    if (defaultBusiness !== null) {
-      allShifts =
-        await businessShiftsRAMDisk.getBusinessShifts(defaultBusiness);
+    if (mostrecentBusiness !== null) {
+      allShifts = await new BusinessShiftsRAMDisk().getBusinessShifts(
+        mostrecentBusiness,
+      );
     }
 
     const loadMainPage: LoadMainPage = {

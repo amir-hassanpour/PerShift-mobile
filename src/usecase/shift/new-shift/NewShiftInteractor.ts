@@ -2,6 +2,7 @@ import { NewShiftDataAccessInterface } from "./NewShiftDataAccessInterface";
 import { NewShiftInputBoundary } from "./NewShiftInputBoundary";
 import { NewShiftInputData } from "./NewShiftInputData";
 import { NewShiftOutputBoundary } from "./NewShiftOutputBoundary";
+import { NewShiftOutputData } from "./NewShiftOutputData";
 
 export class NewShiftInteractor implements NewShiftInputBoundary {
   outputBoudnary: NewShiftOutputBoundary;
@@ -15,7 +16,13 @@ export class NewShiftInteractor implements NewShiftInputBoundary {
     this.outputBoudnary = outputBoudnary;
   }
 
-  addNewShift(inputData: NewShiftInputData): Promise<void> {
-    throw new Error("Method not implemented.");
+  async addNewShift(inputData: NewShiftInputData): Promise<void> {
+    let result = await this.DAO.newShift(inputData);
+
+    let outputData: NewShiftOutputData = {
+      shifts: result.shifts,
+    };
+
+    await this.outputBoudnary.prepareForSuccessView(outputData);
   }
 }

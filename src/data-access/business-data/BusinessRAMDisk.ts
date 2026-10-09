@@ -58,6 +58,25 @@ export class BusinessRAMDisk {
     this.businesses = businesses;
   }
 
+  async getMostRecentlyCheckedInBusiness(): Promise<Business | null> {
+    const businesses = await this.getBusinesses();
+
+    let mostRecent: Business | null = null;
+    let latestTime = -Infinity;
+
+    for (const business of businesses) {
+      const checkedIn = new Date(business.lastCheckedIn);
+      const time = checkedIn.getTime();
+
+      if (time > latestTime) {
+        latestTime = time;
+        mostRecent = new Business(business.id, business.name, checkedIn);
+      }
+    }
+
+    return mostRecent;
+  }
+
   async getBusinesses(): Promise<Business[]> {
     const storedValue = await Storage.getItem(BUSINESSES_KEY);
 

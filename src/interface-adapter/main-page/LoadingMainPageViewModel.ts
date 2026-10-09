@@ -2,6 +2,7 @@ import { Business } from "@/entity/Business";
 import { BusinessRequested } from "@/entity/BusinessRequested";
 import { Shift } from "@/entity/Shift";
 import { ViewModel } from "@/interface-adapter/ViewModel";
+import { NewShiftState } from "../shift/new-shift/NewShiftState";
 import { AcceptBusinessRequestState } from "./accept-business-request/AcceptBusinessRequestState";
 import { DeclineBusinessRequestState } from "./decline-business-request/DeclineBusinessRequestState";
 import { LoadingMainPageStates } from "./load-main-page/LoadingMainPageState";
@@ -10,7 +11,8 @@ export class LoadingMainPageViewModel extends ViewModel {
   state:
     | LoadingMainPageStates
     | DeclineBusinessRequestState
-    | AcceptBusinessRequestState;
+    | AcceptBusinessRequestState
+    | NewShiftState;
   shifts: Shift[] | [] = [];
   businesses: Business[] | [] = [];
   businessRequested: BusinessRequested[] | [] = [];
@@ -19,7 +21,8 @@ export class LoadingMainPageViewModel extends ViewModel {
     state:
       | LoadingMainPageStates
       | DeclineBusinessRequestState
-      | AcceptBusinessRequestState,
+      | AcceptBusinessRequestState
+      | NewShiftState,
   ) {
     super();
     this.state = state;
@@ -32,6 +35,14 @@ export class LoadingMainPageViewModel extends ViewModel {
       this.businesses,
       businessRequested,
       this.shifts,
+    );
+  }
+
+  setLoadingMainPageNewShift(newShifts: Shift[]) {
+    this.setLoadingMainPageViewModel(
+      this.businesses,
+      this.businessRequested,
+      newShifts,
     );
   }
 

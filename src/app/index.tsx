@@ -20,9 +20,19 @@ export default function Index() {
         if (error) throw error;
         if (cancelled) return;
 
-        const initialScreen = data.session
-          ? builder.makeMainPageView()
-          : builder.makeSignupView();
+        let initialScreen: ReactElement;
+
+        if (data.session) {
+          initialScreen = builder.makeMainPageView();
+
+          const listener = builder.subscribeToRoleAssignmentRealTime();
+          await listener.subscribeNewShift();
+        } else {
+          initialScreen = builder.makeSignupView();
+        }
+
+        if (cancelled) return;
+        setScreen(initialScreen);
 
         setScreen(initialScreen);
       } catch (error) {

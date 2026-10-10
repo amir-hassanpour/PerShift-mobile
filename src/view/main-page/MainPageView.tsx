@@ -3,7 +3,6 @@ import { SymbolView } from "expo-symbols";
 import { Component } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import NavigationBar from "../navigation-bar/NavigationBar";
 
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
 import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/decline-business-request/DeclineBusinessRequestController";
@@ -224,10 +223,6 @@ export class MainPageView extends Component<MainPageProps> {
           >
             {this.renderMainContent()}
           </ScrollView>
-
-          <View style={styles.footer}>
-            <NavigationBar />
-          </View>
         </View>
       </SafeAreaView>
     );

@@ -1,8 +1,16 @@
 import { SymbolView } from "expo-symbols";
 import { Component } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 const items = [
+  {
+    label: "Home",
+    icon: {
+      ios: "house",
+      android: "home",
+      web: "home",
+    },
+  },
   {
     label: "Messages",
     icon: { ios: "bubble.left", android: "chat_bubble", web: "chat_bubble" },
@@ -29,7 +37,12 @@ const items = [
   },
 ] as const;
 
-export default class NavigationBar extends Component {
+type NavigationBarProps = {
+  onMainPress: () => void;
+  onMessagesPress: () => void;
+};
+
+export class NavigationBar extends Component<NavigationBarProps> {
   render() {
     return (
       <View style={styles.container}>
@@ -38,9 +51,13 @@ export default class NavigationBar extends Component {
             key={item.label}
             accessibilityRole="button"
             accessibilityLabel={item.label}
-            onPress={() => {
-              // Navigation will be added later.
-            }}
+            onPress={
+              item.label === "Messages"
+                ? this.props.onMessagesPress
+                : item.label === "Home"
+                  ? this.props.onMainPress
+                  : undefined
+            }
             style={({ pressed }) => [
               styles.button,
               pressed && styles.buttonPressed,
@@ -52,7 +69,6 @@ export default class NavigationBar extends Component {
               size={25}
               style={styles.icon}
             />
-            <Text style={styles.label}>{item.label}</Text>
           </Pressable>
         ))}
       </View>

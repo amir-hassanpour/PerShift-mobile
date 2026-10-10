@@ -23,12 +23,12 @@ export default function Index() {
         let initialScreen: ReactElement;
 
         if (data.session) {
-          initialScreen = builder.makeMainPageView();
+          initialScreen = builder.makeMainPageSlider(setScreen);
 
           const listener = builder.subscribeToRoleAssignmentRealTime();
           await listener.subscribeNewShift();
         } else {
-          initialScreen = builder.makeSignupView();
+          initialScreen = builder.makeSignupView(setScreen);
         }
 
         if (cancelled) return;

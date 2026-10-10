@@ -15,6 +15,7 @@ import { UserSignupController } from "@/interface-adapter/user/signup/UserSignup
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
+import { ViewModel } from "@/interface-adapter/ViewModel";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInteractor } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestInteractor";
@@ -30,6 +31,9 @@ import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSi
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
 import { MainPageView } from "@/view/main-page/MainPageView";
+import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
+import { Messages } from "@/view/messages/Messages";
+import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
 import { SignupView } from "@/view/user/signup/SignupView";
 import { ReactElement } from "react";
 
@@ -80,6 +84,37 @@ export default class Builder {
   newShiftInteractor: NewShiftInteractor | undefined = undefined;
   newShiftPresenter: NewShiftPresenter | undefined = undefined;
   businessRAMDisk: BusinessShiftsRAMDisk | undefined = undefined;
+
+  makeMainPageSlider(showScreen: (screen: ReactElement) => void): ReactElement {
+    return (
+      <MainPageSlidingNavigation
+        pages={[
+          this.makeMainPageView(showScreen),
+          this.makeMessagesPage(showScreen),
+        ]}
+        renderNavigation={({ onSelect }) => this.makeNavigationBar(onSelect)}
+      />
+    );
+  }
+
+  makeMessagesPage(showScreen: (screen: ReactElement) => void): ReactElement {
+    return <Messages viewModel={new ViewModel()} />;
+  }
+
+  makeNavigationBar(
+    onSelect: (index: 0 | 1 | 2 | 3 | 4 | 5) => void,
+  ): ReactElement {
+    return (
+      <NavigationBar
+        onMessagesPress={() => {
+          onSelect(1);
+        }}
+        onMainPress={() => {
+          onSelect(0);
+        }}
+      />
+    );
+  }
 
   subscribeToRoleAssignmentRealTime(): ShiftDataBaseSubscribe {
     this.businessRAMDisk = new BusinessShiftsRAMDisk();
@@ -145,7 +180,7 @@ export default class Builder {
     return this.declineBusinessRequestController;
   }
 
-  makeMainPageView(): ReactElement {
+  makeMainPageView(showScreen: (screen: ReactElement) => void): ReactElement {
     this.loadingMainPageOutputBoudnary = new LoadingMainPagePresenter(
       this.loadingMainPageViewModel,
     );
@@ -168,7 +203,7 @@ export default class Builder {
     );
   }
 
-  makeSignupView(): ReactElement {
+  makeSignupView(showScreen: (screen: ReactElement) => void): ReactElement {
     this.userSignupViewModel = new UserSignupViewModel(UserSignupState.IDLE);
     this.userSignupOutputBoundary = new UserSignupPresenter(
       this.userSignupViewModel,
@@ -182,13 +217,13 @@ export default class Builder {
       this.userSignupInteractor,
     );
 
-    let makeMainPage = async () => await this.makeMainPageView();
+    let makeMainPage = async () => await this.makeMainPageView(showScreen);
 
     return (
       <SignupView
         userSignupController={this.userSignupController}
         userSignupViewModel={this.userSignupViewModel}
-        buildMainPage={this.makeMainPageView()}
+        buildMainPage={this.makeMainPageView(showScreen)}
       />
     );
   }

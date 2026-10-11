@@ -1,5 +1,6 @@
-import { BussinessDataAccessObject } from "@/data-access/business-data/BusinessDataAccessObject";
-import { BusinessShiftsRAMDisk } from "@/data-access/business-data/shift/BusinessShiftsRAMDisk";
+import { BussinessDataAccessObject } from "@/data-access/business-shifts-data/BusinessDataAccessObject";
+import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
+import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
 import { AcceptBusinessRequestPresenter } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestPresenter";
@@ -9,14 +10,17 @@ import { LoadingMainPageController } from "@/interface-adapter/main-page/load-ma
 import { LoadingMainPagePresenter } from "@/interface-adapter/main-page/load-main-page/LoadingMainPagePresenter";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
 import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
+import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
+import { LoadingMessagesPagePresenter } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPagePresenter";
+import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
 import { UserSignupController } from "@/interface-adapter/user/signup/UserSignupController";
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
-import { ViewModel } from "@/interface-adapter/ViewModel";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
+import { LoadingMessagesPageInteractor } from "@/usecase/loading-messages-page/LoadingMessagesPageInteractor";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInteractor } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestInteractor";
 import { AcceptBusinessRequestOutputBoundary } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestOutputBoundary";
@@ -85,6 +89,16 @@ export default class Builder {
   newShiftPresenter: NewShiftPresenter | undefined = undefined;
   businessRAMDisk: BusinessShiftsRAMDisk | undefined = undefined;
 
+  loadingMessagesPageInteractor: LoadingMessagesPageInteractor | undefined =
+    undefined;
+  loadingMessagesPageDAO: ChatsDataAccessObject | undefined = undefined;
+  laodingMessagesPageController: LoadingMessagesPageController | undefined =
+    undefined;
+  loadingMessagesPagePresenter: LoadingMessagesPagePresenter | undefined =
+    undefined;
+  loadingMessagesPageViewModel: LoadingMessagesPageViewModel =
+    new LoadingMessagesPageViewModel();
+
   makeMainPageSlider(showScreen: (screen: ReactElement) => void): ReactElement {
     return (
       <MainPageSlidingNavigation
@@ -98,7 +112,24 @@ export default class Builder {
   }
 
   makeMessagesPage(showScreen: (screen: ReactElement) => void): ReactElement {
-    return <Messages viewModel={new ViewModel()} />;
+    this.loadingMessagesPagePresenter = new LoadingMessagesPagePresenter(
+      this.loadingMessagesPageViewModel,
+    );
+    this.loadingMessagesPageDAO = new ChatsDataAccessObject();
+    this.loadingMessagesPageInteractor = new LoadingMessagesPageInteractor(
+      this.loadingMessagesPageDAO,
+      this.loadingMessagesPagePresenter,
+    );
+    this.laodingMessagesPageController = new LoadingMessagesPageController(
+      this.loadingMessagesPageInteractor,
+    );
+
+    return (
+      <Messages
+        viewModel={this.loadingMessagesPageViewModel}
+        controller={this.laodingMessagesPageController}
+      />
+    );
   }
 
   makeNavigationBar(

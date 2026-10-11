@@ -1,5 +1,6 @@
 import { Chat } from "@/entity/Chat";
-import { ViewModel } from "@/interface-adapter/ViewModel";
+import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
+import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
 import { Component } from "react";
@@ -7,7 +8,8 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export type MessagesProps = {
-  viewModel: ViewModel;
+  controller: LoadingMessagesPageController;
+  viewModel: LoadingMessagesPageViewModel;
 };
 
 export type props = {

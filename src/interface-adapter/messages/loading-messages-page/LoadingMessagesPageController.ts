@@ -1,4 +1,4 @@
-import { LoadingMessagesPageInteractor } from "@/usecase/loading-messages-page/LoadingMessagesPageInteractor";
+import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
 
 export class LoadingMessagesPageController {
   interactor: LoadingMessagesPageInteractor;

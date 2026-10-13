@@ -10,27 +10,28 @@ type StoredChat = {
   name: string;
   lastTextedAt: string;
   messageCount: number;
+  business_id: string;
 };
 
 export class ChatsRAMDisk {
-  // Serialize saves so simultaneous updates don't overwrite each other.
   private static saveQueue: Promise<void> = Promise.resolve();
 
   async saveChat(chat: Chat): Promise<void> {
-    const timestamp = chat.lastTextedAt.getTime();
+    let timestamp: number;
+    if (chat.lastTextedAt !== undefined) {
+      timestamp = chat.lastTextedAt.getTime();
+    } else {
+      timestamp = Infinity;
+    }
 
     if (!Number.isFinite(timestamp)) {
       throw new Error("Chat has an invalid lastTextedAt date");
     }
 
-    // Capture the values before waiting for another save.
-    const savedChat = new Chat(
-      chat.id,
-      chat.lastText,
-      chat.name,
-      new Date(timestamp),
-      chat.messageCount,
-    );
+    const savedChat = new Chat(chat.id, chat.lastText, chat.name);
+    savedChat.lastTextedAt = new Date(timestamp);
+    savedChat.messageCount = chat.messageCount;
+    savedChat.business_id = chat.business_id;
 
     const save = ChatsRAMDisk.saveQueue.then(async () => {
       const chats = await this.getChats();
@@ -44,7 +45,8 @@ export class ChatsRAMDisk {
 
       chats.sort(
         (a, b) =>
-          b.lastTextedAt.getTime() - a.lastTextedAt.getTime() ||
+          (b.lastTextedAt !== undefined ? b.lastTextedAt.getTime() : 0) -
+            (a.lastTextedAt !== undefined ? a.lastTextedAt.getTime() : 0) ||
           a.id.localeCompare(b.id),
       );
 
@@ -54,7 +56,6 @@ export class ChatsRAMDisk {
       );
     });
 
-    // A failed save must not block subsequent saves.
     ChatsRAMDisk.saveQueue = save.catch(() => {});
 
     await save;
@@ -78,11 +79,13 @@ export class ChatsRAMDisk {
             stored.name,
             new Date(stored.lastTextedAt),
             stored.messageCount,
+            stored.business_id,
           ),
       )
       .sort(
         (a, b) =>
-          b.lastTextedAt.getTime() - a.lastTextedAt.getTime() ||
+          (b.lastTextedAt !== undefined ? b.lastTextedAt.getTime() : 0) -
+            (a.lastTextedAt !== undefined ? a.lastTextedAt.getTime() : 0) ||
           a.id.localeCompare(b.id),
       )
       .slice(0, MAX_CHATS);

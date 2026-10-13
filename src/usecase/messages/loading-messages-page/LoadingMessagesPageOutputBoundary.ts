@@ -5,5 +5,5 @@ export interface LoadingMessagesPageOutputBoudnary {
     outputData: LoadingMessagesPageOutputData,
   ): Promise<void>;
 
-  prepareForFailureView(error: string): Promise<void>;
+  prepareForFailureView(error: Error): Promise<void>;
 }

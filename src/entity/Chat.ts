@@ -1,21 +1,35 @@
 export class Chat {
   id: string;
-  lastText: string | "" = "";
+  business_id: string;
   name: string;
-  lastTextedAt: Date;
-  messageCount: number = 0;
+  lastText: string;
+  lastTextedAt: Date | undefined;
+  messageCount: number;
+
+  constructor(id: string, business_id: string, name: string);
 
   constructor(
     id: string,
-    lastText: string,
+    business_id: string,
     name: string,
     lastTextedAt: Date,
     messageCount: number,
+    lastText: string,
+  );
+
+  constructor(
+    id: string,
+    business_id: string,
+    name: string,
+    lastTextedAt?: Date,
+    messageCount: number = 0,
+    lastText: string = "",
   ) {
     this.id = id;
-    this.lastText = lastText;
+    this.business_id = business_id;
     this.name = name;
     this.lastTextedAt = lastTextedAt;
     this.messageCount = messageCount;
+    this.lastText = lastText;
   }
 }

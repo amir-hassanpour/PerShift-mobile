@@ -1,5 +1,5 @@
-import { LoadingMessagesPageOutputBoudnary } from "@/usecase/loading-messages-page/LoadingMessagesPageOutputBoundary";
-import { LoadingMessagesPageOutputData } from "@/usecase/loading-messages-page/LoadingMessagesPageOutputData";
+import { LoadingMessagesPageOutputBoudnary } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageOutputBoundary";
+import { LoadingMessagesPageOutputData } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageOutputData";
 import { LoadingMessagesPageViewModel } from "../LoadingMessagesPageViewModel";
 import { LoadingMessagesPageState } from "./LoadingMessagesPageState";
 

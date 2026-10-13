@@ -4,6 +4,6 @@ export type ChatsOutput = {
   chats: Chat[];
 };
 
-export interface LoadingMainPageDataAccessInterface {
+export interface LoadingMessagesPageDataAccessInterface {
   loadMainPage(): Promise<ChatsOutput>;
 }

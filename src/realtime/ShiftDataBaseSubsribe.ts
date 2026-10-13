@@ -75,7 +75,7 @@ export class ShiftDataBaseSubscribe {
               businessid: data.business_id,
               id: data.id,
             };
-            console.log("amirmahdi you did it");
+
             await this.controller.newShiftController(shift);
           } catch (error) {
             console.error("Could not load the newly assigned shift:", error);

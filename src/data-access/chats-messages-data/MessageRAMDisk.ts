@@ -19,10 +19,6 @@ export class MessagesRAMDisk {
   }
 
   async saveMessage(message: Message): Promise<void> {
-    if (!Number.isFinite(message.time.getTime())) {
-      throw new Error("Message has an invalid date");
-    }
-
     const snapshot = new Message(
       message.id,
       message.chat_id,
@@ -55,7 +51,6 @@ export class MessagesRAMDisk {
       );
     });
 
-    // Keep later saves working if this save fails.
     MessagesRAMDisk.saveQueue = save.catch(() => {});
 
     await save;

@@ -1,6 +1,8 @@
 import { BussinessDataAccessObject } from "@/data-access/business-shifts-data/BusinessDataAccessObject";
 import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
 import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
+import { ChatsRAMDisk } from "@/data-access/chats-messages-data/ChatsRAMDisk";
+import { UserRAMDisk } from "@/data-access/user-data/UserRAMDisk";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
 import { AcceptBusinessRequestPresenter } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestPresenter";
@@ -10,15 +12,26 @@ import { LoadingMainPageController } from "@/interface-adapter/main-page/load-ma
 import { LoadingMainPagePresenter } from "@/interface-adapter/main-page/load-main-page/LoadingMainPagePresenter";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
 import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
+import { LoadingChatPageController } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPageController";
+import { LoadingChatPagePresenter } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPagePresenter";
+import { LoadingChatPageViewModel } from "@/interface-adapter/messages/chat-page/LoadingChatPageViewModel";
+import { NewMessageController } from "@/interface-adapter/messages/chat-page/new-message/NewMessageController";
+import { NewMessagePresenter } from "@/interface-adapter/messages/chat-page/new-message/NewMessagePresenter";
+import { SendMessageController } from "@/interface-adapter/messages/chat-page/send-message/SendMessageConttroller";
+import { SendMessagePresenter } from "@/interface-adapter/messages/chat-page/send-message/SendMessagePresenter";
 import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
 import { LoadingMessagesPagePresenter } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPagePresenter";
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
+import { NewChatController } from "@/interface-adapter/messages/new-chat/NewChatController";
+import { NewChatPresenter } from "@/interface-adapter/messages/new-chat/NewChatPresenter";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
 import { UserSignupController } from "@/interface-adapter/user/signup/UserSignupController";
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
+import { ChatDataBaseSubscribe } from "@/realtime/ChatDataBaseSubscribe";
+import { MessagesDataBaseSubscribe } from "@/realtime/MessagesDataBaseSubscribe";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInteractor } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestInteractor";
@@ -29,13 +42,18 @@ import { DeclineBusinessRequestOutputBoundary } from "@/usecase/main-page/declin
 import { LoadingMainPageDataAccessInterface } from "@/usecase/main-page/loading-main-page/LoadingMainPageDataAccessInterface";
 import { LoadingMainPageInteractor } from "@/usecase/main-page/loading-main-page/LoadingMainPageInteractor";
 import { LoadingMainPageOutputBoundary } from "@/usecase/main-page/loading-main-page/LoadingMainPageOutputBoundary";
+import { LoadingChatPageInteractor } from "@/usecase/messages/chat-page/load-chat-page/LoadingChatPageInteractor";
+import { NewMessageInteractor } from "@/usecase/messages/chat-page/new-message/NewMessageInteractor";
+import { SendMessageInteractor } from "@/usecase/messages/chat-page/send-message/SendMessageInteractor";
 import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
+import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
 import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSignupDataAccessInterface";
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
 import { MainPageView } from "@/view/main-page/MainPageView";
 import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
+import { ChatPage } from "@/view/messages/ChatPage";
 import { Messages } from "@/view/messages/Messages";
 import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
 import { SignupView } from "@/view/user/signup/SignupView";
@@ -92,12 +110,127 @@ export default class Builder {
   loadingMessagesPageInteractor: LoadingMessagesPageInteractor | undefined =
     undefined;
   loadingMessagesPageDAO: ChatsDataAccessObject | undefined = undefined;
-  laodingMessagesPageController: LoadingMessagesPageController | undefined =
+  loadingMessagesPageController: LoadingMessagesPageController | undefined =
     undefined;
   loadingMessagesPagePresenter: LoadingMessagesPagePresenter | undefined =
     undefined;
   loadingMessagesPageViewModel: LoadingMessagesPageViewModel =
     new LoadingMessagesPageViewModel();
+
+  loadingChatPageController: LoadingChatPageController | undefined = undefined;
+  loadingChatPageViewModel = new Map<string, LoadingChatPageViewModel>();
+  loadingChatPageDAO: ChatsDataAccessObject | undefined = undefined;
+  loadingChatPgaeInteractor: LoadingChatPageInteractor | undefined = undefined;
+  loadingChatPagePresenter: LoadingChatPagePresenter | undefined = undefined;
+
+  newMessageController: NewMessageController | undefined = undefined;
+  newMessageInteractor: NewMessageInteractor | undefined = undefined;
+  newMessageDAO: ChatsDataAccessObject | undefined = undefined;
+  newMessagePresenter: NewMessagePresenter | undefined = undefined;
+
+  newChatController: NewChatController | undefined = undefined;
+  newChatInteractor: NewChatInteractor | undefined = undefined;
+  newChatPresenter: NewChatPresenter | undefined = undefined;
+  newChatOutputBoundary: NewChatPresenter | undefined = undefined;
+  newChatDAO: ChatsDataAccessObject | undefined = undefined;
+  newChatViewModel: LoadingMessagesPageViewModel =
+    this.loadingMessagesPageViewModel;
+
+  newMessageSubscribe: MessagesDataBaseSubscribe | undefined = undefined;
+  newChatSubscribe: ChatDataBaseSubscribe | undefined = undefined;
+
+  sendMessageOutputBoundary: SendMessagePresenter | undefined = undefined;
+  sendMessageDAO: ChatsDataAccessObject | undefined = undefined;
+  sendMessageInteractor: SendMessageInteractor | undefined = undefined;
+  sendMessageController: SendMessageController | undefined = undefined;
+
+  makeNewChatSubscription() {
+    this.newChatViewModel = this.loadingMessagesPageViewModel;
+    this.newChatPresenter = new NewChatPresenter(this.newChatViewModel);
+    this.newChatDAO = new ChatsDataAccessObject();
+    this.newChatInteractor = new NewChatInteractor(
+      this.newChatDAO,
+      this.newChatPresenter,
+    );
+    this.newChatController = new NewChatController(this.newChatInteractor);
+
+    return new ChatDataBaseSubscribe({
+      controller: this.newChatController,
+    });
+  }
+
+  makeChatPage = async (chat_id: string): Promise<ReactElement> => {
+    const newViewModel = new LoadingChatPageViewModel();
+    this.loadingChatPageViewModel.set(chat_id, newViewModel);
+
+    this.loadingChatPagePresenter = new LoadingChatPagePresenter(newViewModel);
+
+    this.loadingChatPageDAO = new ChatsDataAccessObject();
+
+    this.loadingChatPgaeInteractor = new LoadingChatPageInteractor(
+      this.loadingChatPageDAO,
+      this.loadingChatPagePresenter,
+    );
+
+    this.loadingChatPageController = new LoadingChatPageController(
+      this.loadingChatPgaeInteractor,
+    );
+
+    this.sendMessageOutputBoundary = new SendMessagePresenter(newViewModel);
+    this.sendMessageDAO = new ChatsDataAccessObject();
+    this.sendMessageInteractor = new SendMessageInteractor(
+      this.sendMessageDAO,
+      this.sendMessageOutputBoundary,
+    );
+    this.sendMessageController = new SendMessageController(
+      this.sendMessageInteractor,
+    );
+
+    const chat = new ChatsRAMDisk();
+    const getChat = await chat.getChatByID(chat_id);
+    const currentUser = new UserRAMDisk();
+    const getCurUser = await currentUser.getCurrentUser();
+
+    if (getChat === undefined) {
+      throw new Error("Builder can't find chat to make chat page");
+    }
+    if (getCurUser === null) {
+      throw new Error("Buidler can't find the current user to make chat page");
+    }
+
+    return (
+      <ChatPage
+        chat={getChat}
+        user_id={getCurUser.id}
+        controller={this.loadingChatPageController}
+        viewModel={newViewModel}
+        sendMessageController={this.sendMessageController}
+      />
+    );
+  };
+
+  makeChatPageFunction() {
+    return this.makeChatPage;
+  }
+
+  makeNewMessageSubscription() {
+    this.newMessagePresenter = new NewMessagePresenter(
+      this.loadingChatPageViewModel,
+    );
+    this.newMessageDAO = new ChatsDataAccessObject();
+
+    this.newMessageInteractor = new NewMessageInteractor(
+      this.newMessageDAO,
+      this.newMessagePresenter,
+    );
+    this.newMessageController = new NewMessageController(
+      this.newMessageInteractor,
+    );
+
+    return new MessagesDataBaseSubscribe({
+      controller: this.newMessageController,
+    });
+  }
 
   makeLoadingMessagesController(): LoadingMessagesPageController {
     this.loadingMessagesPagePresenter = new LoadingMessagesPagePresenter(
@@ -108,11 +241,11 @@ export default class Builder {
       this.loadingMessagesPageDAO,
       this.loadingMessagesPagePresenter,
     );
-    this.laodingMessagesPageController = new LoadingMessagesPageController(
+    this.loadingMessagesPageController = new LoadingMessagesPageController(
       this.loadingMessagesPageInteractor,
     );
 
-    return this.laodingMessagesPageController;
+    return this.loadingMessagesPageController;
   }
 
   makeMainPageSlider(showScreen: (screen: ReactElement) => void): ReactElement {
@@ -128,7 +261,13 @@ export default class Builder {
   }
 
   makeMessagesPage(showScreen: (screen: ReactElement) => void): ReactElement {
-    return <Messages viewModel={this.loadingMessagesPageViewModel} />;
+    return (
+      <Messages
+        viewModel={this.loadingMessagesPageViewModel}
+        controller={this.makeLoadingMessagesController()}
+        makeChatPage={this.makeChatPage}
+      />
+    );
   }
 
   makeNavigationBar(

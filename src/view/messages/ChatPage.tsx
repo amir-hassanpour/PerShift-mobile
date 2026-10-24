@@ -1,3 +1,8 @@
+import { Chat } from "@/entity/Chat";
+import { Message } from "@/entity/Message";
+import { LoadingChatPageController } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPageController";
+import { LoadingChatPageViewModel } from "@/interface-adapter/messages/chat-page/LoadingChatPageViewModel";
+import { SendMessageController } from "@/interface-adapter/messages/chat-page/send-message/SendMessageConttroller";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
 import { Component } from "react";
@@ -13,36 +18,23 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-// Temporary data matching your Message entity.
-const previewViewModel = {
-  chatName: "Team chat",
-  currentUserId: "user-1",
-  messages: [
-    {
-      id: "message-1",
-      chat_id: "chat-1",
-      content: "Hey! Are you available for tomorrow’s shift?",
-      time: new Date("2026-10-12T09:30:00"),
-      sender_id: "user-2",
-    },
-    {
-      id: "message-2",
-      chat_id: "chat-1",
-      content: "Yes, I’ll be there!",
-      time: new Date("2026-10-12T09:32:00"),
-      sender_id: "user-1",
-    },
-    {
-      id: "message-3",
-      chat_id: "chat-1",
-      content: "Perfect, see you tomorrow.",
-      time: new Date("2026-10-12T09:33:00"),
-      sender_id: "user-2",
-    },
-  ],
+export type ChatProps = {
+  chat: Chat;
+  user_id: string;
+  controller: LoadingChatPageController;
+  viewModel: LoadingChatPageViewModel;
+  sendMessageController: SendMessageController;
 };
 
-export class ChatPage extends Component {
+const previewViewModel = {
+  chatName: "",
+  currentUserId: "",
+  messages: [] as Message[],
+};
+
+export class ChatPage extends Component<ChatProps> {
+  private unsubscribe?: () => void;
+
   state = {
     draft: "",
   };
@@ -53,10 +45,30 @@ export class ChatPage extends Component {
     > | null,
   };
 
+  constructor(props: ChatProps) {
+    super(props);
+  }
+
+  componentDidMount(): void {
+    this.unsubscribe = this.props.viewModel.subscribe(() => {
+      this.forceUpdate();
+    });
+
+    this.props.controller.loadingChatPage({ chat_id: this.props.chat.id });
+  }
+
+  componentWillUnmount() {
+    this.unsubscribe?.();
+  }
+
   render() {
-    // Replace this with this.props.viewModel when ready.
-    // Messages should be ordered oldest to newest.
-    const { chatName, currentUserId, messages } = previewViewModel;
+    const { chat, user_id, viewModel, sendMessageController } = this.props;
+    const { chatName, messages } = {
+      chatName: chat.name,
+      messages: viewModel.messages,
+    };
+    console.log(chatName);
+    previewViewModel.messages = messages;
 
     return (
       <SafeAreaView style={styles.screen}>
@@ -122,7 +134,7 @@ export class ChatPage extends Component {
               this.listRef.current?.scrollToEnd({ animated: false });
             }}
             renderItem={({ item, index }) => {
-              const isMine = item.sender_id === currentUserId;
+              const isMine = item.sender_id === user_id;
               const previous = messages[index - 1];
               const showDate =
                 !previous ||
@@ -198,9 +210,6 @@ export class ChatPage extends Component {
                 </View>
 
                 <Text style={styles.emptyTitle}>No messages yet</Text>
-                <Text style={styles.emptyDescription}>
-                  Your messages with {chatName} will appear here.
-                </Text>
               </View>
             }
           />
@@ -238,11 +247,19 @@ export class ChatPage extends Component {
               />
 
               <Pressable
-                disabled
                 accessibilityRole="button"
                 accessibilityLabel="Send message"
                 accessibilityState={{ disabled: true }}
                 style={styles.sendButton}
+                onPress={() => {
+                  if (this.state.draft.trim().length > 0) {
+                    sendMessageController.sendMessage({
+                      content: this.state.draft,
+                      chat_id: chat.id,
+                      sender_id: user_id,
+                    });
+                  }
+                }}
               >
                 <SymbolView
                   name={{
@@ -266,7 +283,7 @@ export class ChatPage extends Component {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#fffefe",
   },
   page: {
     flex: 1,

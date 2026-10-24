@@ -34,27 +34,27 @@ export class ChatDataBaseSubscribe {
           event: "INSERT",
           table: "chat_assignment",
           schema: "public",
-          filter: `profile_id=eq.(${user.id})`,
+          filter: `profile_id=eq.${user.id}`,
         },
         async (payload) => {
           console.log("new message recieved");
           try {
             const { data, error } = await supabase
-              .from("chat_assignment")
+              .from("chat")
               .select(
                 `
-            chat_id, 
+            id, 
             business_id,
-            name
+            chat_name
             `,
               )
-              .eq("profile_id", user.id)
+              .eq("id", payload.new.chat_id)
               .single();
 
             if (error) throw error;
 
-            let chat = new Chat(data.chat_id, data.business_id, data.name);
-
+            let chat = new Chat(data.id, data.business_id, data.chat_name);
+            console.log("new chat arrived");
             await this.controller.newChatController(chat);
           } catch (error) {
             throw error;
@@ -62,7 +62,7 @@ export class ChatDataBaseSubscribe {
         },
       )
       .subscribe((error) => {
-        console.log("subscibed");
+        console.log("subscibed to new chats");
       });
   }
 }

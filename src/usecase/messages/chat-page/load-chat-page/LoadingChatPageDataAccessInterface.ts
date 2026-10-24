@@ -9,5 +9,5 @@ export type loadingChatPageInput = {
 };
 
 export interface LoadingChatPageDataAccessInterface {
-  loadingChatPage(): Promise<loadingChatPageOutput>;
+  loadingChatPage(chat_id: { chat_id: string }): Promise<loadingChatPageOutput>;
 }

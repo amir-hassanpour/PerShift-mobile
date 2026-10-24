@@ -14,6 +14,7 @@ export class LoadingMessagesPagePresenter implements LoadingMessagesPageOutputBo
     outputData: LoadingMessagesPageOutputData,
   ): Promise<void> {
     this.viewModel.chats = outputData.chats;
+    this.viewModel.user_id = outputData.user_id;
     this.viewModel.state = LoadingMessagesPageState.SUCCESS;
     this.viewModel.firePropertyChange();
   }

@@ -1,16 +1,21 @@
 import { NewMessageOutputBoundary } from "@/usecase/messages/chat-page/new-message/NewMessageOutputBoundary";
 import { NewMessageOutputData } from "@/usecase/messages/chat-page/new-message/NewMessageOutputData";
-import { LoadingMessagesPageViewModel } from "../../LoadingMessagesPageViewModel";
+import { LoadingChatPageViewModel } from "../LoadingChatPageViewModel";
 
 export class NewMessagePresenter implements NewMessageOutputBoundary {
-  viewModel: LoadingMessagesPageViewModel;
+  viewModel: Map<string, LoadingChatPageViewModel>;
 
-  constructor(viewModel: LoadingMessagesPageViewModel) {
+  constructor(viewModel: Map<string, LoadingChatPageViewModel>) {
     this.viewModel = viewModel;
   }
 
-  async prepareForSuccessView(ouputData: NewMessageOutputData): Promise<void> {
-    this.viewModel.loadMainPageView;
+  async prepareForSuccessView(outputData: NewMessageOutputData): Promise<void> {
+    await this.viewModel
+      .get(outputData.messages[0].chat_id)
+      ?.laodChatPage(outputData.messages);
+    await this.viewModel
+      .get(outputData.messages[0].chat_id)
+      ?.firePropertyChange();
   }
 
   async prepareForFailureView(error: Error): Promise<void> {

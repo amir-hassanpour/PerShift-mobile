@@ -7,6 +7,7 @@ export class LoadingMessagesPageViewModel extends ViewModel {
   state: LoadingMessagesPageState | NewChatState =
     LoadingMessagesPageState.LOADING;
   chats: Chat[] = [];
+  user_id: string = "";
 
   constructor() {
     super();
@@ -14,6 +15,7 @@ export class LoadingMessagesPageViewModel extends ViewModel {
 
   loadMainPageView(chats: Chat[]) {
     this.chats = chats;
+    this.user_id = this.user_id;
     super.firePropertyChange();
   }
 }

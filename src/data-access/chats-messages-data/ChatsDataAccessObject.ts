@@ -1,3 +1,4 @@
+import { Message } from "@/entity/Message";
 import {
   LoadingChatPageDataAccessInterface,
   loadingChatPageOutput,
@@ -8,6 +9,10 @@ import {
   NewMessageOutput,
 } from "@/usecase/messages/chat-page/new-message/NewMessageDataAccessInterface";
 import {
+  OutputData,
+  SendMessageDataAccessInterface,
+} from "@/usecase/messages/chat-page/send-message/SendMessageDataAccessInterface";
+import {
   ChatsOutput,
   LoadingMessagesPageDataAccessInterface,
 } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageDataAccessInterface";
@@ -16,31 +21,89 @@ import {
   NewChatInput,
   NewChatOutput,
 } from "@/usecase/messages/new-chat/NewChatDataAccessInterface";
+import { supabase } from "../supabase/client";
+import { UserRAMDisk } from "../user-data/UserRAMDisk";
 import { ChatsRAMDisk } from "./ChatsRAMDisk";
+import { MessagesRAMDisk } from "./MessageRAMDisk";
 
 export class ChatsDataAccessObject
   implements
     LoadingMessagesPageDataAccessInterface,
     LoadingChatPageDataAccessInterface,
     NewChatDataAccessInterface,
-    NewMessageDataAccessInterface
+    NewMessageDataAccessInterface,
+    SendMessageDataAccessInterface
 {
-  newChat(newChatInput: NewChatInput): Promise<NewChatOutput> {
-    throw new Error("Method not implemented.");
+  async sendMessage(inputData: Message): Promise<OutputData> {
+    new MessagesRAMDisk().saveMessage(inputData);
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      throw new Error("what the fuck");
+    }
+
+    const { error } = await supabase.from("message").insert({
+      id: inputData.id,
+      chat_id: inputData.chat_id,
+      content: inputData.content,
+      time: inputData.time,
+      sender_id: user.id,
+    });
+
+    if (error) console.error("Test insert failed:", error);
+
+    const messagesOutput = await new MessagesRAMDisk().getMessages(
+      inputData.chat_id,
+    );
+
+    return { messages: messagesOutput };
   }
 
-  newMessage(message: NewMessageInput): Promise<NewMessageOutput> {
-    throw new Error("Method not implemented.");
+  async newChat(newChatInput: NewChatInput): Promise<NewChatOutput> {
+    await new ChatsRAMDisk().saveChat({
+      id: newChatInput.chat_id,
+      business_id: newChatInput.business_id,
+      lastText: "No Messages Yet",
+      name: "No Name",
+      lastTextedAt: undefined,
+      messageCount: 0,
+    });
+
+    return { chats: await new ChatsRAMDisk().getChats() };
   }
 
-  loadingChatPage(): Promise<loadingChatPageOutput> {
-    throw new Error("Method not implemented.");
+  async newMessage(message: NewMessageInput): Promise<NewMessageOutput> {
+    await new MessagesRAMDisk().saveMessage(message);
+
+    return {
+      messages: await new MessagesRAMDisk().getMessages(message.chat_id),
+    };
+  }
+
+  async loadingChatPage({
+    chat_id,
+  }: {
+    chat_id: string;
+  }): Promise<loadingChatPageOutput> {
+    return {
+      messages: await new MessagesRAMDisk().getMessages(chat_id),
+    };
   }
 
   async loadMainPage(): Promise<ChatsOutput> {
     const chatRD = new ChatsRAMDisk();
     const allChats = await chatRD.getChats();
+    const curUser = new UserRAMDisk();
+    const curUserID = (await curUser.getCurrentUser())?.id;
 
-    return { chats: allChats };
+    if (curUserID === undefined) {
+      throw new Error("Current user is not available in the local cache");
+    }
+
+    return { chats: allChats, user_id: curUserID };
   }
 }

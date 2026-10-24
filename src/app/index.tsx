@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactElement } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import Builder from "./Builder";
 
-const builder = new Builder();
+export const builder = new Builder();
 
 export default function Index() {
   const [screen, setScreen] = useState<ReactElement | null>(null);
@@ -27,6 +27,8 @@ export default function Index() {
 
           const listener = builder.subscribeToRoleAssignmentRealTime();
           await listener.subscribeNewShift();
+          await builder.makeNewChatSubscription().subscribeChat();
+          await builder.makeNewMessageSubscription().subscribeChat();
         } else {
           initialScreen = builder.makeSignupView(setScreen);
         }

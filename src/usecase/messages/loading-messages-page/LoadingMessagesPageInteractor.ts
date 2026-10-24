@@ -20,10 +20,11 @@ export class LoadingMessagesPageInteractor implements LoadingMessagesPageInputBo
     inputData: LoadingMessagesPageInputData,
   ): Promise<void> {
     try {
-      const chats = (await this.DAO.loadMainPage()).chats;
+      const output = await this.DAO.loadMainPage();
 
       const outputData: LoadingMessagesPageOutputData = {
-        chats: chats,
+        chats: output.chats,
+        user_id: output.user_id,
       };
 
       this.outputBoundary.prepareForSuccessView(outputData);

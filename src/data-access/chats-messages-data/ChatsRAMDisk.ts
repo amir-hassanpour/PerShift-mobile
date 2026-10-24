@@ -8,7 +8,7 @@ type StoredChat = {
   id: string;
   lastText: string;
   name: string;
-  lastTextedAt: string;
+  lastTextedAt: Date | undefined;
   messageCount: number;
   business_id: string;
 };
@@ -22,10 +22,6 @@ export class ChatsRAMDisk {
       timestamp = chat.lastTextedAt.getTime();
     } else {
       timestamp = Infinity;
-    }
-
-    if (!Number.isFinite(timestamp)) {
-      throw new Error("Chat has an invalid lastTextedAt date");
     }
 
     const savedChat = new Chat(chat.id, chat.lastText, chat.name);
@@ -77,7 +73,9 @@ export class ChatsRAMDisk {
             stored.id,
             stored.lastText,
             stored.name,
-            new Date(stored.lastTextedAt),
+            stored.lastTextedAt !== undefined
+              ? new Date(stored.lastTextedAt)
+              : undefined,
             stored.messageCount,
             stored.business_id,
           ),
@@ -89,5 +87,22 @@ export class ChatsRAMDisk {
           a.id.localeCompare(b.id),
       )
       .slice(0, MAX_CHATS);
+  }
+
+  async getChatByID(chat_id: string): Promise<Chat | undefined> {
+    const allChats = await this.getChats();
+
+    for (const chat of allChats) {
+      if (chat.id === chat_id) {
+        return chat;
+      }
+    }
+
+    return;
+  }
+
+  async deleteAllChats() {
+    await Storage.removeItem(CHATS_KEY);
+    await Storage.setItem(CHATS_KEY, JSON.stringify([]));
   }
 }

@@ -3,7 +3,7 @@ import { NewMessageInputBoundary } from "./NewMessageInputBoundary";
 import { NewMessageInputData } from "./NewMessageInputData";
 import { NewMessageOutputBoundary } from "./NewMessageOutputBoundary";
 
-export class NewMeessageInteractor implements NewMessageInputBoundary {
+export class NewMessageInteractor implements NewMessageInputBoundary {
   DAO: NewMessageDataAccessInterface;
   outputBoundary: NewMessageOutputBoundary;
 

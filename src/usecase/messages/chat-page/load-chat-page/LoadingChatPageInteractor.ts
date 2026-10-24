@@ -15,7 +15,15 @@ export class LoadingChatPageInteractor implements LoadingChatPageInputBoundary {
     this.outputBoundary = outputBoundary;
   }
 
-  laodingChatPage(intputData: LoadingChatPageInputData): Promise<void> {
-    throw new Error("Method not implemented.");
+  async laodingChatPage(intputData: LoadingChatPageInputData): Promise<void> {
+    try {
+      const result = await this.DAO.loadingChatPage({
+        chat_id: intputData.chat_id,
+      });
+
+      await this.outputBoundary.prepareForSuccessView(result);
+    } catch (error) {
+      console.log("couldn't upload the chat page");
+    }
   }
 }

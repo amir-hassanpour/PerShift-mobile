@@ -12,7 +12,7 @@ export class Chat {
     id: string,
     business_id: string,
     name: string,
-    lastTextedAt: Date,
+    lastTextedAt: Date | undefined,
     messageCount: number,
     lastText: string,
   );
@@ -21,7 +21,7 @@ export class Chat {
     id: string,
     business_id: string,
     name: string,
-    lastTextedAt?: Date,
+    lastTextedAt: Date | undefined = undefined,
     messageCount: number = 0,
     lastText: string = "",
   ) {

@@ -4,15 +4,16 @@ import { LoadingMessagesPageViewModel } from "../LoadingMessagesPageViewModel";
 import { NewChatState } from "./NewChatState";
 
 export class NewChatPresenter implements NewChatOutputBoundary {
-  viewMode: LoadingMessagesPageViewModel;
+  viewModel: LoadingMessagesPageViewModel;
 
   constructor(viewModel: LoadingMessagesPageViewModel) {
-    this.viewMode = viewModel;
+    this.viewModel = viewModel;
   }
 
   async prepareForSuccessView(outputData: NewChatOutputData): Promise<void> {
-    this.viewMode.state = NewChatState.SUCCESS;
-    this.viewMode.loadMainPageView(outputData.chats);
+    this.viewModel.state = NewChatState.SUCCESS;
+    this.viewModel.loadMainPageView(outputData.chats);
+    await this.viewModel.firePropertyChange();
   }
 
   async prepareForFailureView(error: Error): Promise<void> {

@@ -1,24 +1,34 @@
 import { Chat } from "@/entity/Chat";
+import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
+import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { Component } from "react";
+import { Component, ReactElement } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export type MessagesProps = {
+  controller: LoadingMessagesPageController;
   viewModel: LoadingMessagesPageViewModel;
+  makeChatPage: (chat_id: string) => Promise<ReactElement>;
 };
 
 export type props = {
+  user_id: string;
   chats: Chat[];
 };
 
 export class Messages extends Component<MessagesProps> {
+  state: { activeChat: ReactElement | null } = {
+    activeChat: null,
+  };
   private unsubscribe?: () => void;
 
   componentDidMount(): void {
     this.subscribeToViewModel();
+
+    this.props.controller.loadMainPageController();
   }
 
   componentDidUpdate(previousProps: MessagesProps): void {
@@ -39,7 +49,13 @@ export class Messages extends Component<MessagesProps> {
   }
 
   render() {
-    const { chats }: props = { chats: [] };
+    if (this.state.activeChat) {
+      return this.state.activeChat;
+    }
+    const { chats, user_id }: props = {
+      chats: this.props.viewModel.chats,
+      user_id: this.props.viewModel.user_id,
+    };
 
     return (
       <SafeAreaView style={styles.screen}>
@@ -129,9 +145,13 @@ export class Messages extends Component<MessagesProps> {
 
               return (
                 <Pressable
-                  disabled
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: true }}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/chat/[chatID]",
+                      params: { chatID: item.id },
+                    });
+                  }}
                   style={styles.chatRow}
                 >
                   <View style={styles.avatar} accessible={false}>

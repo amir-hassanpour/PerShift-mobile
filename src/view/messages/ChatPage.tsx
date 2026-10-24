@@ -258,6 +258,7 @@ export class ChatPage extends Component<ChatProps> {
                       chat_id: chat.id,
                       sender_id: user_id,
                     });
+                    this.state.draft = "";
                   }
                 }}
               >

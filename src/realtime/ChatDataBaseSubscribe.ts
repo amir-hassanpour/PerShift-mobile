@@ -54,7 +54,7 @@ export class ChatDataBaseSubscribe {
             if (error) throw error;
 
             let chat = new Chat(data.id, data.business_id, data.chat_name);
-            console.log("new chat arrived");
+
             await this.controller.newChatController(chat);
           } catch (error) {
             throw error;

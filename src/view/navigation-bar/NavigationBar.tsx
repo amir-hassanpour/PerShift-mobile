@@ -16,7 +16,7 @@ const items = [
     icon: { ios: "bubble.left", android: "chat_bubble", web: "chat_bubble" },
   },
   {
-    label: "Lessons",
+    label: "Trainings",
     icon: { ios: "book", android: "menu_book", web: "menu_book" },
   },
   {
@@ -40,6 +40,7 @@ const items = [
 type NavigationBarProps = {
   onMainPress: () => void;
   onMessagesPress: () => void;
+  onTrainingPress: () => void;
 };
 
 export class NavigationBar extends Component<NavigationBarProps> {
@@ -56,7 +57,9 @@ export class NavigationBar extends Component<NavigationBarProps> {
                 ? this.props.onMessagesPress
                 : item.label === "Home"
                   ? this.props.onMainPress
-                  : undefined
+                  : item.label === "Trainings"
+                    ? this.props.onTrainingPress
+                    : undefined
             }
             style={({ pressed }) => [
               styles.button,

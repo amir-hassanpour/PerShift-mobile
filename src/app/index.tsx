@@ -1,4 +1,5 @@
 import { supabase } from "@/data-access/supabase/client";
+import { TrainingsRAMDisk } from "@/data-access/trainings/trainings-data/TrainingsRAMDisk";
 import { useEffect, useState, type ReactElement } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 import Builder from "./Builder";
@@ -29,6 +30,8 @@ export default function Index() {
           await listener.subscribeNewShift();
           await builder.makeNewChatSubscription().subscribeChat();
           await builder.makeNewMessageSubscription().subscribeChat();
+          await builder.makeNewTrainingSubscribe().subscribeChat();
+          await new TrainingsRAMDisk().deleteAllTrainings();
         } else {
           initialScreen = builder.makeSignupView(setScreen);
         }

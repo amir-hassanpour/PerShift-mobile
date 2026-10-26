@@ -8,6 +8,6 @@ export class LoadingChatPageViewModel extends ViewModel {
 
   async laodChatPage(messages: Message[]): Promise<void> {
     this.messages = messages;
-    super.firePropertyChange();
+    await super.firePropertyChange();
   }
 }

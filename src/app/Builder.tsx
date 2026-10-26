@@ -2,6 +2,7 @@ import { BussinessDataAccessObject } from "@/data-access/business-shifts-data/Bu
 import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
 import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
 import { ChatsRAMDisk } from "@/data-access/chats-messages-data/ChatsRAMDisk";
+import { TrainingsDataAccessObject } from "@/data-access/trainings/trainings-data/TraininsDataAccessObject";
 import { UserRAMDisk } from "@/data-access/user-data/UserRAMDisk";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
@@ -26,6 +27,11 @@ import { NewChatController } from "@/interface-adapter/messages/new-chat/NewChat
 import { NewChatPresenter } from "@/interface-adapter/messages/new-chat/NewChatPresenter";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
+import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
+import { LoadTrainingsPagePresenter } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPagePresenter";
+import { LoadTrainingsPageViewModel } from "@/interface-adapter/training-page/LoadTrainingsPageViewModel";
+import { NewTrainingController } from "@/interface-adapter/training-page/new-training/NewTrainingController";
+import { NewTrainingPresenter } from "@/interface-adapter/training-page/new-training/NewTrainingPresenter";
 import { UserSignupController } from "@/interface-adapter/user/signup/UserSignupController";
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
@@ -33,6 +39,7 @@ import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupV
 import { ChatDataBaseSubscribe } from "@/realtime/ChatDataBaseSubscribe";
 import { MessagesDataBaseSubscribe } from "@/realtime/MessagesDataBaseSubscribe";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
+import { TrainingDataBaseSubscribe } from "@/realtime/TrainingDataBaseSubscribe";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInteractor } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestInteractor";
 import { AcceptBusinessRequestOutputBoundary } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestOutputBoundary";
@@ -48,6 +55,8 @@ import { SendMessageInteractor } from "@/usecase/messages/chat-page/send-message
 import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
 import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
+import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
+import { NewTrainingInteractor } from "@/usecase/trainings/new-training/NewTrainingInteractor";
 import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSignupDataAccessInterface";
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
@@ -56,6 +65,7 @@ import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
 import { ChatPage } from "@/view/messages/ChatPage";
 import { Messages } from "@/view/messages/Messages";
 import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
+import { TrainingPage } from "@/view/training/TrainingPage";
 import { SignupView } from "@/view/user/signup/SignupView";
 import { ReactElement } from "react";
 
@@ -143,6 +153,59 @@ export default class Builder {
   sendMessageDAO: ChatsDataAccessObject | undefined = undefined;
   sendMessageInteractor: SendMessageInteractor | undefined = undefined;
   sendMessageController: SendMessageController | undefined = undefined;
+
+  loadTrainingsPageViewModel = new LoadTrainingsPageViewModel();
+  loadTrainingsPageOutputBoundary: LoadTrainingsPagePresenter | undefined =
+    undefined;
+  loadTrainingsPageDAO: TrainingsDataAccessObject | undefined = undefined;
+  loadTrainingsPageInteractor: LoadTrainingsPageInteractor | undefined =
+    undefined;
+  loadTrainingsPageControler: LoadTrainingsPageController | undefined =
+    undefined;
+
+  newTrainingDAO: TrainingsDataAccessObject | undefined = undefined;
+  newTrainingOutputBoundary: NewTrainingPresenter | undefined = undefined;
+  newTrainingInteractor: NewTrainingInteractor | undefined = undefined;
+  newTrainingController: NewTrainingController | undefined = undefined;
+
+  makeNewTrainingSubscribe() {
+    this.newTrainingDAO = new TrainingsDataAccessObject();
+    this.newTrainingOutputBoundary = new NewTrainingPresenter(
+      this.loadTrainingsPageViewModel,
+    );
+    this.newTrainingInteractor = new NewTrainingInteractor(
+      this.newTrainingDAO,
+      this.newTrainingOutputBoundary,
+    );
+    this.newTrainingController = new NewTrainingController(
+      this.newTrainingInteractor,
+    );
+
+    return new TrainingDataBaseSubscribe({
+      controller: this.newTrainingController,
+    });
+  }
+
+  makeTrainingPage(showScreen: (screen: ReactElement) => void): ReactElement {
+    this.loadTrainingsPageOutputBoundary = new LoadTrainingsPagePresenter(
+      this.loadTrainingsPageViewModel,
+    );
+    this.loadTrainingsPageDAO = new TrainingsDataAccessObject();
+    this.loadTrainingsPageInteractor = new LoadTrainingsPageInteractor(
+      this.loadTrainingsPageDAO,
+      this.loadTrainingsPageOutputBoundary,
+    );
+    this.loadTrainingsPageControler = new LoadTrainingsPageController(
+      this.loadTrainingsPageInteractor,
+    );
+
+    return (
+      <TrainingPage
+        viewModel={this.loadTrainingsPageViewModel}
+        controller={this.loadTrainingsPageControler}
+      />
+    );
+  }
 
   makeNewChatSubscription() {
     this.newChatViewModel = this.loadingMessagesPageViewModel;
@@ -254,6 +317,7 @@ export default class Builder {
         pages={[
           this.makeMainPageView(showScreen),
           this.makeMessagesPage(showScreen),
+          this.makeTrainingPage(showScreen),
         ]}
         renderNavigation={({ onSelect }) => this.makeNavigationBar(onSelect)}
       />
@@ -280,6 +344,9 @@ export default class Builder {
         }}
         onMainPress={() => {
           onSelect(0);
+        }}
+        onTrainingPress={() => {
+          onSelect(2);
         }}
       />
     );

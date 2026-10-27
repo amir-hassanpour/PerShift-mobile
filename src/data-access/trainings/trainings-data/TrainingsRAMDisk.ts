@@ -79,6 +79,16 @@ export class TrainingsRAMDisk {
     );
   }
 
+  async getTrainingByID(trainingID: string): Promise<Training | undefined> {
+    const trainings = await this.getTrainings();
+
+    for (const training of trainings) {
+      if (trainingID === training.id) {
+        return training;
+      }
+    }
+  }
+
   async deleteAllTrainings(): Promise<void> {
     const deletion = TrainingsRAMDisk.saveQueue.then(async () => {
       await Storage.removeItem(TRAININGS_KEY);

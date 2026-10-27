@@ -1,14 +1,22 @@
-import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
-import { LoadTrainingsPageViewModel } from "@/interface-adapter/training-page/LoadTrainingsPageViewModel";
-import { StatusBar } from "expo-status-bar";
-import { SymbolView } from "expo-symbols";
+import { Training } from "@/entity/Training";
+import { LoadTrainingPageController } from "@/interface-adapter/training-page/training-page/laod-training-page/LoadTrainingPageController";
+import { LoadTrainingPageViewModel } from "@/interface-adapter/training-page/training-page/LoadTrainingPageViewModel";
+import { router } from "expo-router";
 import { Component } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export type TrainingPageProps = {
-  viewModel: LoadTrainingsPageViewModel;
-  controller: LoadTrainingsPageController;
+  training: Training;
+  viewModel: LoadTrainingPageViewModel;
+  controller: LoadTrainingPageController;
 };
 
 export class TrainingPage extends Component<TrainingPageProps> {
@@ -16,13 +24,20 @@ export class TrainingPage extends Component<TrainingPageProps> {
 
   componentDidMount(): void {
     this.subscribeToViewModel();
-    this.props.controller?.loadTrainingsPage({});
+    this.loadTraining();
   }
 
   componentDidUpdate(previousProps: TrainingPageProps): void {
     if (previousProps.viewModel !== this.props.viewModel) {
       this.unsubscribe?.();
       this.subscribeToViewModel();
+    }
+
+    if (
+      previousProps.training.id !== this.props.training.id ||
+      previousProps.controller !== this.props.controller
+    ) {
+      this.loadTraining();
     }
   }
 
@@ -36,13 +51,18 @@ export class TrainingPage extends Component<TrainingPageProps> {
     });
   }
 
+  private loadTraining(): void {
+    this.props.controller?.loadTrainingPage(this.props.training.id);
+  }
+
   render() {
-    const { trainings } = this.props.viewModel;
+    const { name, modules } = {
+      name: this.props.training.name,
+      modules: this.props.viewModel.modules,
+    };
 
     return (
       <SafeAreaView style={styles.screen}>
-        <StatusBar style="dark" />
-
         <View style={styles.page}>
           <View style={styles.brandHeader}>
             <Text style={styles.brandName}>
@@ -51,83 +71,82 @@ export class TrainingPage extends Component<TrainingPageProps> {
           </View>
 
           <View style={styles.controls}>
-            <Text accessibilityRole="header" style={styles.title}>
-              Training
-            </Text>
+            <View style={styles.titleRow}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+                onPress={() => {
+                  if (router.canGoBack()) {
+                    router.back();
+                  } else {
+                    router.replace("/");
+                  }
+                }}
+                style={styles.backButton}
+              >
+                <Text style={styles.backIcon}>‹</Text>
+              </Pressable>
 
-            <Pressable
-              disabled
-              accessibilityRole="button"
-              accessibilityLabel="Search training"
+              <Text
+                accessibilityRole="header"
+                style={styles.title}
+                numberOfLines={2}
+              >
+                {name || "Training"}
+              </Text>
+            </View>
+
+            <TextInput
+              editable={false}
+              placeholder="Search modules"
+              placeholderTextColor="#718099"
+              accessibilityLabel="Search modules"
               accessibilityState={{ disabled: true }}
               style={styles.search}
-            >
-              <SymbolView
-                name={{
-                  ios: "magnifyingglass",
-                  android: "search",
-                  web: "search",
-                }}
-                tintColor="#718099"
-                size={20}
-                style={{ width: 20, height: 20 }}
-              />
+            />
 
-              <Text style={styles.searchText}>Search training</Text>
-            </Pressable>
+            <Text accessibilityRole="header" style={styles.listTitle}>
+              Training modules
+            </Text>
           </View>
 
           <FlatList
             style={styles.list}
             contentContainerStyle={styles.listContent}
-            data={trainings}
-            extraData={trainings.slice()}
-            keyExtractor={(training) => training.id}
+            data={modules}
+            extraData={modules.slice()}
+            keyExtractor={(module) => module.id}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => {
-              const name = item.name.trim() || "Unnamed training";
-              const words = name.split(/\s+/);
-              const first = Array.from(words[0])[0] || "?";
-              const last =
-                words.length > 1
-                  ? Array.from(words[words.length - 1])[0] || ""
-                  : "";
+            renderItem={({ item, index }) => (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={item.header}
+                onPress={() => {
+                  router.push({
+                    pathname: "/module/[moduleID]",
+                    params: {
+                      moduleID: item.id,
+                      trainingID: item.training_id,
+                    },
+                  });
+                }}
+                style={({ pressed }) => [
+                  styles.moduleRow,
+                  pressed && styles.moduleRowPressed,
+                ]}
+              >
+                <View style={styles.avatar} accessible={false}>
+                  <Text style={styles.moduleNumber}>{index + 1}</Text>
+                </View>
 
-              // Assumes progress is a percentage from 0 to 100.
-              const progress = Number.isFinite(item.progress)
-                ? Math.round(Math.min(100, Math.max(0, item.progress)))
-                : 0;
-
-              return (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`${name}, ${progress}% complete`}
-                  onPress={() => {
-                    // Training action intentionally left empty.
-                  }}
-                  style={({ pressed }) => [
-                    styles.trainingRow,
-                    pressed && styles.trainingRowPressed,
-                  ]}
-                >
-                  <View style={styles.avatar} accessible={false}>
-                    <Text style={styles.initials}>
-                      {(first + last).toLocaleUpperCase()}
-                    </Text>
-                  </View>
-
-                  <View style={styles.trainingInfo}>
-                    <Text style={styles.trainingName} numberOfLines={1}>
-                      {name}
-                    </Text>
-
-                    <Text style={styles.trainingDetail}>
-                      {progress}% complete
-                    </Text>
-                  </View>
-                </Pressable>
-              );
-            }}
+                <Text style={styles.moduleName} numberOfLines={2}>
+                  {item.header}
+                </Text>
+              </Pressable>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.emptyText}>No modules to display.</Text>
+            }
           />
         </View>
       </SafeAreaView>
@@ -165,29 +184,48 @@ const styles = StyleSheet.create({
   controls: {
     paddingHorizontal: 24,
     paddingTop: 12,
-    paddingBottom: 8,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 18,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#EAF1FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backIcon: {
+    color: "#2563EB",
+    fontSize: 32,
+    lineHeight: 36,
   },
   title: {
+    flex: 1,
     color: "#152A4A",
     fontSize: 24,
     fontWeight: "700",
     letterSpacing: -0.4,
-    marginBottom: 18,
   },
   search: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     minHeight: 50,
     borderRadius: 16,
     backgroundColor: "#F5F8FF",
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  searchText: {
-    flex: 1,
     color: "#718099",
     fontSize: 15,
+  },
+  listTitle: {
+    marginTop: 18,
+    marginBottom: 8,
+    color: "#152A4A",
+    fontSize: 17,
+    fontWeight: "700",
   },
   list: {
     flex: 1,
@@ -196,7 +234,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  trainingRow: {
+  moduleRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
@@ -204,7 +242,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E7ECF3",
   },
-  trainingRowPressed: {
+  moduleRowPressed: {
     backgroundColor: "#F5F8FF",
   },
   avatar: {
@@ -215,23 +253,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  initials: {
+  moduleNumber: {
     color: "#2563EB",
     fontSize: 19,
     fontWeight: "700",
   },
-  trainingInfo: {
+  moduleName: {
     flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  trainingName: {
     color: "#152A4A",
     fontSize: 16,
     fontWeight: "600",
   },
-  trainingDetail: {
-    color: "#425675",
-    fontSize: 14,
+  emptyText: {
+    padding: 24,
+    textAlign: "center",
+    color: "#718099",
+    fontSize: 15,
   },
 });

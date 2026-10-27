@@ -9,6 +9,11 @@ import {
   OutputDataNewTraining,
 } from "@/usecase/trainings/new-training/NewTrainingDataAccessInterface";
 import {
+  LoadTrainingPageDataAccessInterface,
+  LoadTrainingPageInput,
+  LoadTrainingPageOutput,
+} from "@/usecase/trainings/training-page/load-training-page/LoadTrainingPageDataAccessInterface";
+import {
   NewModuleDataAccessInterface,
   NewModuleInputData,
   NewModuleOutputData,
@@ -20,12 +25,25 @@ export class TrainingsDataAccessObject
   implements
     LoadTrainingsPageDataAccessInterface,
     NewTrainingDataAccessInterface,
-    NewModuleDataAccessInterface
+    NewModuleDataAccessInterface,
+    LoadTrainingPageDataAccessInterface
 {
+  async loadTrainingPage(
+    inputData: LoadTrainingPageInput,
+  ): Promise<LoadTrainingPageOutput> {
+    return {
+      modules: await new ModuleRAMDisk().getModules(inputData.trainingID),
+    };
+  }
+
   async newModule(newModule: NewModuleInputData): Promise<NewModuleOutputData> {
     await new ModuleRAMDisk().saveModule(newModule.module);
 
-    return { modules: await new ModuleRAMDisk().getModules() };
+    return {
+      modules: await new ModuleRAMDisk().getModules(
+        newModule.module.training_id,
+      ),
+    };
   }
   async newTraining(
     inputData: InputDataNewTraining,

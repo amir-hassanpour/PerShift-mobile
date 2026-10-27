@@ -102,18 +102,28 @@ export class ModuleRAMDisk {
     });
   }
 
-  async getModules(): Promise<Module[]> {
+  async getModules(trainingID: string): Promise<Module[]> {
     let result: Module[] = [];
 
     await this.enqueue(async () => {
       const modules = await this.readModules();
       result = await this.filterModules(modules);
 
-      // Remove modules belonging to trainings no longer cached.
       await Storage.setItem(MODULES_KEY, JSON.stringify(result));
     });
 
     return result;
+  }
+
+  async getModuleByID(
+    moduleID: string,
+    trainingID: string,
+  ): Promise<Module | undefined> {
+    const modules = await this.getModules(trainingID);
+
+    for (const module of modules) {
+      if (module.id === moduleID) return module;
+    }
   }
 
   async deleteAllModules(): Promise<void> {

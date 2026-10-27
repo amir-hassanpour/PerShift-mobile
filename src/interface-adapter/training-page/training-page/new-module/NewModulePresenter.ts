@@ -3,16 +3,24 @@ import { NewModuleOutputData } from "@/usecase/trainings/training-page/new-modul
 import { LoadTrainingPageViewModel } from "../LoadTrainingPageViewModel";
 
 export class NewModulePresenter implements NewModuleOutputBoundary {
-  viewModel: LoadTrainingPageViewModel;
+  viewModel: Map<string, LoadTrainingPageViewModel>;
 
-  constructor(viewModel: LoadTrainingPageViewModel) {
+  constructor(viewModel: Map<string, LoadTrainingPageViewModel>) {
     this.viewModel = viewModel;
   }
 
   prepareForSuccesView(outputData: NewModuleOutputData): void {
-    this.viewModel.modules = outputData.modules;
-    this.viewModel.firePropertyChange();
+    const firstModule = outputData.modules[0];
+    if (!firstModule) return;
+    console.log("Presenter map size:", this.viewModel.size);
+
+    const trainingViewModel = this.viewModel.get(firstModule.training_id);
+    if (!trainingViewModel) return;
+    console.log("about to fire pro");
+    trainingViewModel.modules = outputData.modules;
+    trainingViewModel.firePropertyChange();
   }
+
   prepareForFailureView(error: string): void {
     throw new Error("modules of trainig wasn't rcieved");
   }

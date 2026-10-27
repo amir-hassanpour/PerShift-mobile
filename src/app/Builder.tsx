@@ -2,6 +2,8 @@ import { BussinessDataAccessObject } from "@/data-access/business-shifts-data/Bu
 import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
 import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
 import { ChatsRAMDisk } from "@/data-access/chats-messages-data/ChatsRAMDisk";
+import { ModuleRAMDisk } from "@/data-access/trainings/trainings-data/ModuleRAMDisk";
+import { TrainingsRAMDisk } from "@/data-access/trainings/trainings-data/TrainingsRAMDisk";
 import { TrainingsDataAccessObject } from "@/data-access/trainings/trainings-data/TraininsDataAccessObject";
 import { UserRAMDisk } from "@/data-access/user-data/UserRAMDisk";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
@@ -32,12 +34,18 @@ import { LoadTrainingsPagePresenter } from "@/interface-adapter/training-page/lo
 import { LoadTrainingsPageViewModel } from "@/interface-adapter/training-page/LoadTrainingsPageViewModel";
 import { NewTrainingController } from "@/interface-adapter/training-page/new-training/NewTrainingController";
 import { NewTrainingPresenter } from "@/interface-adapter/training-page/new-training/NewTrainingPresenter";
+import { LoadTrainingPageController } from "@/interface-adapter/training-page/training-page/laod-training-page/LoadTrainingPageController";
+import { LoadTrainingPagePresenter } from "@/interface-adapter/training-page/training-page/laod-training-page/LoadTrainingPagePresenter";
+import { LoadTrainingPageViewModel } from "@/interface-adapter/training-page/training-page/LoadTrainingPageViewModel";
+import { NewModuleController } from "@/interface-adapter/training-page/training-page/new-module/NewModuleController";
+import { NewModulePresenter } from "@/interface-adapter/training-page/training-page/new-module/NewModulePresenter";
 import { UserSignupController } from "@/interface-adapter/user/signup/UserSignupController";
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
 import { ChatDataBaseSubscribe } from "@/realtime/ChatDataBaseSubscribe";
 import { MessagesDataBaseSubscribe } from "@/realtime/MessagesDataBaseSubscribe";
+import { ModuleDataBaseSubscribe } from "@/realtime/ModuleDataBaseSubscribe";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
 import { TrainingDataBaseSubscribe } from "@/realtime/TrainingDataBaseSubscribe";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
@@ -57,6 +65,8 @@ import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
 import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
 import { NewTrainingInteractor } from "@/usecase/trainings/new-training/NewTrainingInteractor";
+import { LoadTrainingPageInteractor } from "@/usecase/trainings/training-page/load-training-page/LoadTrainingPageInteractor";
+import { NewModuleInteractor } from "@/usecase/trainings/training-page/new-module/NewModuleInteractor";
 import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSignupDataAccessInterface";
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
@@ -65,7 +75,10 @@ import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
 import { ChatPage } from "@/view/messages/ChatPage";
 import { Messages } from "@/view/messages/Messages";
 import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
+import NoAccessView from "@/view/no-access-view/NoAccessView";
+import { ModulePage } from "@/view/training/ModulePage";
 import { TrainingPage } from "@/view/training/TrainingPage";
+import { TrainingsPage } from "@/view/training/TrainingsPage";
 import { SignupView } from "@/view/user/signup/SignupView";
 import { ReactElement } from "react";
 
@@ -168,6 +181,95 @@ export default class Builder {
   newTrainingInteractor: NewTrainingInteractor | undefined = undefined;
   newTrainingController: NewTrainingController | undefined = undefined;
 
+  loadTrainingPageViewModel = new Map<string, LoadTrainingPageViewModel>();
+  loadTrainingPageDAO: TrainingsDataAccessObject | undefined = undefined;
+  loadTrainingPageOutputBoundary: LoadTrainingPagePresenter | undefined =
+    undefined;
+  loadTrainingPageInteractor: LoadTrainingPageInteractor | undefined =
+    undefined;
+  loadTrainingPageController: LoadTrainingPageController | undefined =
+    undefined;
+
+  newModuleOutputBoundary: NewModulePresenter | undefined = undefined;
+  newModuleDAO: TrainingsDataAccessObject | undefined = undefined;
+  newModuleInteractor: NewModuleInteractor | undefined = undefined;
+  newModuleController: NewModuleController | undefined = undefined;
+
+  makeModulePage = async (
+    moduleID: string,
+    trainingID: string,
+  ): Promise<ReactElement> => {
+    const module = await new ModuleRAMDisk().getModuleByID(
+      moduleID,
+      trainingID,
+    );
+
+    if (module === undefined) return <NoAccessView />;
+
+    return <ModulePage module={module} />;
+  };
+
+  makeTrainingPage = async (trainingID: string): Promise<ReactElement> => {
+    const viewModel = new LoadTrainingPageViewModel();
+
+    this.loadTrainingPageViewModel.set(trainingID, viewModel);
+    console.log(
+      "Presenter exists?",
+      this.newModuleOutputBoundary instanceof NewModulePresenter,
+    );
+
+    console.log(
+      "Same map reference?",
+      this.newModuleOutputBoundary?.viewModel ===
+        this.loadTrainingPageViewModel,
+    );
+
+    console.log("Builder map size:", this.loadTrainingPageViewModel.size);
+    this.loadTrainingPageDAO = new TrainingsDataAccessObject();
+    this.loadTrainingPageOutputBoundary = new LoadTrainingPagePresenter(
+      viewModel,
+    );
+    this.loadTrainingPageInteractor = new LoadTrainingPageInteractor(
+      this.loadTrainingPageDAO,
+      this.loadTrainingPageOutputBoundary,
+    );
+    this.loadTrainingPageController = new LoadTrainingPageController(
+      this.loadTrainingPageInteractor,
+    );
+
+    const training = await new TrainingsRAMDisk().getTrainingByID(trainingID);
+
+    if (training === undefined) {
+      return <NoAccessView />;
+    }
+
+    return (
+      <TrainingPage
+        controller={this.loadTrainingPageController}
+        viewModel={viewModel}
+        training={training}
+      />
+    );
+  };
+
+  makeNewModuleSubscribe() {
+    this.newModuleOutputBoundary = new NewModulePresenter(
+      this.loadTrainingPageViewModel,
+    );
+    this.newModuleDAO = new TrainingsDataAccessObject();
+    this.newModuleInteractor = new NewModuleInteractor(
+      this.newModuleDAO,
+      this.newModuleOutputBoundary,
+    );
+    this.newModuleController = new NewModuleController(
+      this.newModuleInteractor,
+    );
+
+    return new ModuleDataBaseSubscribe({
+      controller: this.newModuleController,
+    });
+  }
+
   makeNewTrainingSubscribe() {
     this.newTrainingDAO = new TrainingsDataAccessObject();
     this.newTrainingOutputBoundary = new NewTrainingPresenter(
@@ -186,7 +288,7 @@ export default class Builder {
     });
   }
 
-  makeTrainingPage(showScreen: (screen: ReactElement) => void): ReactElement {
+  makeTrainingsPage(showScreen: (screen: ReactElement) => void): ReactElement {
     this.loadTrainingsPageOutputBoundary = new LoadTrainingsPagePresenter(
       this.loadTrainingsPageViewModel,
     );
@@ -200,7 +302,7 @@ export default class Builder {
     );
 
     return (
-      <TrainingPage
+      <TrainingsPage
         viewModel={this.loadTrainingsPageViewModel}
         controller={this.loadTrainingsPageControler}
       />
@@ -272,10 +374,6 @@ export default class Builder {
     );
   };
 
-  makeChatPageFunction() {
-    return this.makeChatPage;
-  }
-
   makeNewMessageSubscription() {
     this.newMessagePresenter = new NewMessagePresenter(
       this.loadingChatPageViewModel,
@@ -317,7 +415,7 @@ export default class Builder {
         pages={[
           this.makeMainPageView(showScreen),
           this.makeMessagesPage(showScreen),
-          this.makeTrainingPage(showScreen),
+          this.makeTrainingsPage(showScreen),
         ]}
         renderNavigation={({ onSelect }) => this.makeNavigationBar(onSelect)}
       />

@@ -38,9 +38,17 @@ const items = [
 ] as const;
 
 type NavigationBarProps = {
+  activeIndex:
+    | ["Home"]
+    | ["Messages"]
+    | ["Trainings"]
+    | ["Members"]
+    | ["Profile"];
   onMainPress: () => void;
   onMessagesPress: () => void;
   onTrainingPress: () => void;
+  onMembersPress: () => void;
+  onProfilePress: () => void;
 };
 
 export class NavigationBar extends Component<NavigationBarProps> {
@@ -52,17 +60,37 @@ export class NavigationBar extends Component<NavigationBarProps> {
             key={item.label}
             accessibilityRole="button"
             accessibilityLabel={item.label}
-            onPress={
-              item.label === "Messages"
-                ? this.props.onMessagesPress
-                : item.label === "Home"
-                  ? this.props.onMainPress
-                  : item.label === "Trainings"
-                    ? this.props.onTrainingPress
-                    : undefined
-            }
+            onPress={() => {
+              switch (item.label) {
+                case "Home":
+                  this.props.activeIndex[0] = "Home";
+                  this.props.onMainPress();
+                  break;
+
+                case "Messages":
+                  this.props.activeIndex[0] = "Messages";
+                  this.props.onMessagesPress();
+                  break;
+
+                case "Trainings":
+                  this.props.activeIndex[0] = "Trainings";
+                  this.props.onTrainingPress();
+                  break;
+
+                case "Members":
+                  this.props.activeIndex[0] = "Members";
+                  this.props.onMembersPress();
+                  break;
+
+                case "Profile":
+                  this.props.activeIndex[0] = "Profile";
+                  this.props.onProfilePress();
+                  break;
+              }
+            }}
             style={({ pressed }) => [
               styles.button,
+              this.props.activeIndex[0] === item.label && styles.buttonActive,
               pressed && styles.buttonPressed,
             ]}
           >
@@ -115,5 +143,8 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: "600",
     textAlign: "center",
+  },
+  buttonActive: {
+    backgroundColor: "#EAF1FF",
   },
 });

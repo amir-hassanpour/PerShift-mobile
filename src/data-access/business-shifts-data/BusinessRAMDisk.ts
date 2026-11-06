@@ -84,4 +84,8 @@ export class BusinessRAMDisk {
 
     return this.businesses;
   }
+
+  async deleteAllBusinesses(): Promise<void> {
+    await Storage.removeItem(BUSINESSES_KEY);
+  }
 }

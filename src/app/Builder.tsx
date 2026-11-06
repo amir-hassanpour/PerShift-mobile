@@ -1,7 +1,11 @@
 import { BussinessDataAccessObject } from "@/data-access/business-shifts-data/BusinessDataAccessObject";
+import { BusinessRAMDisk } from "@/data-access/business-shifts-data/BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
 import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
 import { ChatsRAMDisk } from "@/data-access/chats-messages-data/ChatsRAMDisk";
+import { MembersDataAccessObject } from "@/data-access/members/MembersDataAccessObject";
+import { ProfileDAO } from "@/data-access/profile-data-access/ProfileDAO";
+import { StartupSync } from "@/data-access/startup-sync/StartupSync";
 import { ModuleRAMDisk } from "@/data-access/trainings/trainings-data/ModuleRAMDisk";
 import { TrainingsRAMDisk } from "@/data-access/trainings/trainings-data/TrainingsRAMDisk";
 import { TrainingsDataAccessObject } from "@/data-access/trainings/trainings-data/TraininsDataAccessObject";
@@ -15,6 +19,15 @@ import { LoadingMainPageController } from "@/interface-adapter/main-page/load-ma
 import { LoadingMainPagePresenter } from "@/interface-adapter/main-page/load-main-page/LoadingMainPagePresenter";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
 import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
+import { NewBusinessRequestController } from "@/interface-adapter/main-page/new-business-request/NewBusinessRequestController";
+import { NewBusinessRequestPresenter } from "@/interface-adapter/main-page/new-business-request/NewBusinessRequestPresenter";
+import { NewBusinessController } from "@/interface-adapter/main-page/new-business/NewBusinessController";
+import { NewBusinessPresenter } from "@/interface-adapter/main-page/new-business/NewBusinessPresenter";
+import { LoadMembersPageController } from "@/interface-adapter/members/load-members-page/LoadMembersPageController";
+import { LoadMembersPagePresenter } from "@/interface-adapter/members/load-members-page/LoadMembersPagePresenter";
+import { LoadMembersPageViewModel } from "@/interface-adapter/members/LoadMembersPageViewModel";
+import { NewMemberController } from "@/interface-adapter/members/new-member/NewMemberController";
+import { NewMemberPresenter } from "@/interface-adapter/members/new-member/NewMemberPresenter";
 import { LoadingChatPageController } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPageController";
 import { LoadingChatPagePresenter } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPagePresenter";
 import { LoadingChatPageViewModel } from "@/interface-adapter/messages/chat-page/LoadingChatPageViewModel";
@@ -27,6 +40,12 @@ import { LoadingMessagesPagePresenter } from "@/interface-adapter/messages/loadi
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
 import { NewChatController } from "@/interface-adapter/messages/new-chat/NewChatController";
 import { NewChatPresenter } from "@/interface-adapter/messages/new-chat/NewChatPresenter";
+import { LoadProfilePageController } from "@/interface-adapter/profile/load-profile-page/LoadProfilePageController";
+import { LoadProfilePagePresenter } from "@/interface-adapter/profile/load-profile-page/LoadProfilePagePresenter";
+import { LoadProfilePageViewModel } from "@/interface-adapter/profile/LoadProfilePageViewModel";
+import { LoadCreateShiftPageController } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageController";
+import { LoadCreateShiftPagePresenter } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPagePresenter";
+import { LoadCreateShiftPageViewModel } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageViewModel";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
 import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
@@ -43,7 +62,9 @@ import { UserSignupController } from "@/interface-adapter/user/signup/UserSignup
 import { UserSignupPresenter } from "@/interface-adapter/user/signup/UserSignupPresenter";
 import { UserSignupState } from "@/interface-adapter/user/signup/UserSignupState";
 import { UserSignupViewModel } from "@/interface-adapter/user/signup/UserSignupViewModel";
+import { BusinessDataBaseSubscribe } from "@/realtime/BusinessDataBaseSubscribe";
 import { ChatDataBaseSubscribe } from "@/realtime/ChatDataBaseSubscribe";
+import { MemberDataBaseSubscribe } from "@/realtime/MemberDataBaseSubscribe";
 import { MessagesDataBaseSubscribe } from "@/realtime/MessagesDataBaseSubscribe";
 import { ModuleDataBaseSubscribe } from "@/realtime/ModuleDataBaseSubscribe";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
@@ -57,11 +78,17 @@ import { DeclineBusinessRequestOutputBoundary } from "@/usecase/main-page/declin
 import { LoadingMainPageDataAccessInterface } from "@/usecase/main-page/loading-main-page/LoadingMainPageDataAccessInterface";
 import { LoadingMainPageInteractor } from "@/usecase/main-page/loading-main-page/LoadingMainPageInteractor";
 import { LoadingMainPageOutputBoundary } from "@/usecase/main-page/loading-main-page/LoadingMainPageOutputBoundary";
+import { NewBusinessRequestInteractor } from "@/usecase/main-page/new-business-request/NewBusinessRequestInteractor";
+import { NewBusinessInteractor } from "@/usecase/main-page/new-business/NewBusinessInteractor";
+import { LoadMembersPageInteractor } from "@/usecase/members/load-members-page/LoadMembersPageInteractor";
+import { NewMemberInteractor } from "@/usecase/members/new-member/NewMemberInteractor";
 import { LoadingChatPageInteractor } from "@/usecase/messages/chat-page/load-chat-page/LoadingChatPageInteractor";
 import { NewMessageInteractor } from "@/usecase/messages/chat-page/new-message/NewMessageInteractor";
 import { SendMessageInteractor } from "@/usecase/messages/chat-page/send-message/SendMessageInteractor";
 import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
 import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor";
+import { LoadProfilePageInteractor } from "@/usecase/profile/load-profile-page/LoadProfilePageInteractor";
+import { LoadCreateShiftPageInteractor } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
 import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
 import { NewTrainingInteractor } from "@/usecase/trainings/new-training/NewTrainingInteractor";
@@ -70,12 +97,15 @@ import { NewModuleInteractor } from "@/usecase/trainings/training-page/new-modul
 import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSignupDataAccessInterface";
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
+import { CreateShiftView } from "@/view/main-page/CreateShiftView";
 import { MainPageView } from "@/view/main-page/MainPageView";
 import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
+import { MembersView } from "@/view/members/MembersView";
 import { ChatPage } from "@/view/messages/ChatPage";
 import { Messages } from "@/view/messages/Messages";
 import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
 import NoAccessView from "@/view/no-access-view/NoAccessView";
+import { ProfileView } from "@/view/profile/ProfileView";
 import { ModulePage } from "@/view/training/ModulePage";
 import { TrainingPage } from "@/view/training/TrainingPage";
 import { TrainingsPage } from "@/view/training/TrainingsPage";
@@ -194,6 +224,185 @@ export default class Builder {
   newModuleDAO: TrainingsDataAccessObject | undefined = undefined;
   newModuleInteractor: NewModuleInteractor | undefined = undefined;
   newModuleController: NewModuleController | undefined = undefined;
+
+  loadMembersPageViewModel = new LoadMembersPageViewModel();
+  loadMembersPageOutputBoundart: LoadMembersPagePresenter | undefined =
+    undefined;
+  loadMembersPageDAO: MembersDataAccessObject | undefined = undefined;
+  loadMembersPageInteractor: LoadMembersPageInteractor | undefined = undefined;
+  loadMembersPageController: LoadMembersPageController | undefined = undefined;
+
+  newMemberDAO: MembersDataAccessObject | undefined = undefined;
+  newMemberOutputBoundary: NewMemberPresenter | undefined = undefined;
+  newMemberInteractor: NewMemberInteractor | undefined = undefined;
+  newMemberController: NewMemberController | undefined = undefined;
+
+  activeIndex:
+    | ["Home"]
+    | ["Messages"]
+    | ["Trainings"]
+    | ["Members"]
+    | ["Profile"] = ["Home"];
+
+  loadProfilePageViewmodel: LoadProfilePageViewModel =
+    new LoadProfilePageViewModel();
+  loadProfilePageDAO: ProfileDAO | undefined = undefined;
+  loadProfilePageOutputBoundary: LoadProfilePagePresenter | undefined =
+    undefined;
+  laodProfilePageInteractor: LoadProfilePageInteractor | undefined = undefined;
+  loadProfilePageController: LoadProfilePageController | undefined = undefined;
+
+  newBusinessDAO: BussinessDataAccessObject | undefined = undefined;
+  newBusinessOutputBoundary: NewBusinessPresenter | undefined = undefined;
+  newBusinessInteractor: NewBusinessInteractor | undefined = undefined;
+  newBusinessController: NewBusinessController | undefined = undefined;
+
+  newBusinesRequestDAO: BussinessDataAccessObject | undefined = undefined;
+  newBusinessRequestOutputBoundary: NewBusinessRequestPresenter | undefined =
+    undefined;
+  newBusinessRequestInteractor: NewBusinessRequestInteractor | undefined =
+    undefined;
+  newBusinessRequestController: NewBusinessRequestController | undefined =
+    undefined;
+
+  loadCreateShiftPageViewModel: LoadCreateShiftPageViewModel =
+    new LoadCreateShiftPageViewModel();
+  loadCreateShiftPageOutputBoundary: LoadCreateShiftPagePresenter | undefined =
+    undefined;
+  loadCreateShiftPageDAO: MembersDataAccessObject | undefined = undefined;
+  loadCreateShiftPageInteractor: LoadCreateShiftPageInteractor | undefined =
+    undefined;
+  loadCreateShiftPageController: LoadCreateShiftPageController | undefined =
+    undefined;
+
+  makeCreateShiftPage() {
+    this.loadCreateShiftPageOutputBoundary = new LoadCreateShiftPagePresenter(
+      this.loadCreateShiftPageViewModel,
+    );
+    this.loadCreateShiftPageDAO = new MembersDataAccessObject();
+    this.loadCreateShiftPageInteractor = new LoadCreateShiftPageInteractor(
+      this.loadCreateShiftPageDAO,
+      this.loadCreateShiftPageOutputBoundary,
+    );
+    this.loadCreateShiftPageController = new LoadCreateShiftPageController(
+      this.loadCreateShiftPageInteractor,
+    );
+
+    return (
+      <CreateShiftView
+        controller={this.loadCreateShiftPageController}
+        viewModel={this.loadCreateShiftPageViewModel}
+        onCreateShift={async () => {}}
+      />
+    );
+  }
+
+  startupSync(): StartupSync {
+    return new StartupSync();
+  }
+
+  makeBusinessSubscribe() {
+    this.newBusinessDAO = new BussinessDataAccessObject();
+    this.newBusinessOutputBoundary = new NewBusinessPresenter(
+      this.loadProfilePageViewmodel,
+      this.loadingMainPageViewModel,
+    );
+    this.newBusinessInteractor = new NewBusinessInteractor(
+      this.newBusinessDAO,
+      this.newBusinessOutputBoundary,
+    );
+    this.newBusinessController = new NewBusinessController(
+      this.newBusinessInteractor,
+    );
+
+    this.newBusinesRequestDAO = new BussinessDataAccessObject();
+    this.newBusinessRequestOutputBoundary = new NewBusinessRequestPresenter(
+      this.loadProfilePageViewmodel,
+      this.loadingMainPageViewModel,
+    );
+    this.newBusinessRequestInteractor = new NewBusinessRequestInteractor(
+      this.newBusinesRequestDAO,
+      this.newBusinessRequestOutputBoundary,
+    );
+    this.newBusinessRequestController = new NewBusinessRequestController(
+      this.newBusinessRequestInteractor,
+    );
+
+    return new BusinessDataBaseSubscribe({
+      controllerBusiness: this.newBusinessController,
+      controllerBusinessRequest: this.newBusinessRequestController,
+    });
+  }
+
+  makeProfiePage(showScreen: (screen: ReactElement) => void): ReactElement {
+    this.loadProfilePageDAO = new ProfileDAO();
+    this.loadProfilePageOutputBoundary = new LoadProfilePagePresenter(
+      this.loadProfilePageViewmodel,
+    );
+    this.laodProfilePageInteractor = new LoadProfilePageInteractor(
+      this.loadProfilePageDAO,
+      this.loadProfilePageOutputBoundary,
+    );
+    this.loadProfilePageController = new LoadProfilePageController(
+      this.laodProfilePageInteractor,
+    );
+
+    return (
+      <ProfileView
+        controller={this.loadProfilePageController}
+        viewModel={this.loadProfilePageViewmodel}
+      />
+    );
+  }
+
+  async makeMemberSubscribe() {
+    this.newMemberDAO = new MembersDataAccessObject();
+    this.newMemberOutputBoundary = new NewMemberPresenter(
+      this.loadMembersPageViewModel,
+    );
+    this.newMemberInteractor = new NewMemberInteractor(
+      this.newMemberDAO,
+      this.newMemberOutputBoundary,
+    );
+    this.newMemberController = new NewMemberController(
+      this.newMemberInteractor,
+    );
+
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (business === null) return;
+
+    const businessID = business.id;
+
+    console.log(businessID, "businessID");
+
+    return new MemberDataBaseSubscribe({
+      businessID: businessID,
+      controller: this.newMemberController,
+    });
+  }
+
+  makeMembersPage(showScreen: (screen: ReactElement) => void): ReactElement {
+    this.loadMembersPageOutputBoundart = new LoadMembersPagePresenter(
+      this.loadMembersPageViewModel,
+    );
+    this.loadMembersPageDAO = new MembersDataAccessObject();
+    this.loadMembersPageInteractor = new LoadMembersPageInteractor(
+      this.loadMembersPageDAO,
+      this.loadMembersPageOutputBoundart,
+    );
+    this.loadMembersPageController = new LoadMembersPageController(
+      this.loadMembersPageInteractor,
+    );
+
+    return (
+      <MembersView
+        viewModel={this.loadMembersPageViewModel}
+        controller={this.loadMembersPageController}
+      />
+    );
+  }
 
   makeModulePage = async (
     moduleID: string,
@@ -412,10 +621,13 @@ export default class Builder {
   makeMainPageSlider(showScreen: (screen: ReactElement) => void): ReactElement {
     return (
       <MainPageSlidingNavigation
+        activeIndex={this.activeIndex}
         pages={[
           this.makeMainPageView(showScreen),
           this.makeMessagesPage(showScreen),
           this.makeTrainingsPage(showScreen),
+          this.makeMembersPage(showScreen),
+          this.makeProfiePage(showScreen),
         ]}
         renderNavigation={({ onSelect }) => this.makeNavigationBar(onSelect)}
       />
@@ -433,10 +645,11 @@ export default class Builder {
   }
 
   makeNavigationBar(
-    onSelect: (index: 0 | 1 | 2 | 3 | 4 | 5) => void,
+    onSelect: (index: 0 | 1 | 2 | 3 | 4) => void,
   ): ReactElement {
     return (
       <NavigationBar
+        activeIndex={this.activeIndex}
         onMessagesPress={() => {
           onSelect(1);
         }}
@@ -445,6 +658,12 @@ export default class Builder {
         }}
         onTrainingPress={() => {
           onSelect(2);
+        }}
+        onMembersPress={() => {
+          onSelect(3);
+        }}
+        onProfilePress={() => {
+          onSelect(4);
         }}
       />
     );

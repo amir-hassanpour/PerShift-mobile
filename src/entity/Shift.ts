@@ -12,9 +12,9 @@ export class Shift {
     endTime: Date,
     latitude: number | null,
     longitude: number | null,
-    description: string,
     businessID: string,
     shiftID: string,
+    description: string | null,
   ) {
     this.startTime = startTime;
     this.endTime = endTime;

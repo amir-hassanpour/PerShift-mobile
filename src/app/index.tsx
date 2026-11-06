@@ -24,14 +24,27 @@ export default function Index() {
 
         if (data.session) {
           initialScreen = builder.makeMainPageSlider(setScreen);
-
+          console.log(1);
           const listener = builder.subscribeToRoleAssignmentRealTime();
+          console.log(2);
           await listener.subscribeNewShift();
+          console.log(3);
           await builder.makeNewChatSubscription().subscribeChat();
+          console.log(4);
           await builder.makeNewMessageSubscription().subscribeChat();
+          console.log(5);
           await builder.makeNewTrainingSubscribe().subscribeChat();
+          console.log(6);
           await builder.makeNewModuleSubscribe().subscribeModules();
+          console.log(7);
+
+          const business = await builder.makeMemberSubscribe();
+          if (business !== undefined) await business.membetSubscribe();
+          console.log(8);
+          await builder.makeBusinessSubscribe().businessSubscribe();
           // await new ModuleRAMDisk().deleteAllModules();
+          console.log(9);
+          await builder.startupSync().startupSync();
         } else {
           initialScreen = builder.makeSignupView(setScreen);
         }
@@ -42,8 +55,8 @@ export default function Index() {
         setScreen(initialScreen);
       } catch (error) {
         if (!cancelled) {
-          console.error("Could not restore session:", error);
           setFailed(true);
+          throw error;
         }
       }
     }

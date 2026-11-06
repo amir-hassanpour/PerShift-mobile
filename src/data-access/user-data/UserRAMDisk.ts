@@ -10,6 +10,7 @@ type StoredUser = {
   username: string;
   email: string;
   createdAt: string;
+  avatarUrl?: string | null;
 };
 
 export class UserRAMDisk {
@@ -23,6 +24,7 @@ export class UserRAMDisk {
       username: user.username,
       email: user.email,
       createdAt: user.createdAt.toISOString(),
+      avatarUrl: user.avatarUrl,
     };
 
     await Storage.setItem(CURRENT_USER_KEY, JSON.stringify(storedUser));
@@ -50,6 +52,7 @@ export class UserRAMDisk {
       username: storedUser.username,
       email: storedUser.email,
       createdAt: new Date(storedUser.createdAt),
+      avatarUrl: storedUser.avatarUrl,
     });
 
     return this.currentUser;

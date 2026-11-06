@@ -82,4 +82,19 @@ export class MessagesRAMDisk {
       )
       .slice(0, MAX_MESSAGES);
   }
+
+  async deleteAllMessages(): Promise<void> {
+    const task = MessagesRAMDisk.saveQueue.then(async () => {
+      const keys = await Storage.getAllKeys();
+
+      const messageKeys = keys.filter((key) => key.startsWith("messages:"));
+
+      for (const key of messageKeys) {
+        await Storage.removeItem(key);
+      }
+    });
+
+    MessagesRAMDisk.saveQueue = task.catch(() => {});
+    await task;
+  }
 }

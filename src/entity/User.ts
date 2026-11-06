@@ -5,6 +5,7 @@ export type UserProps = {
   username: string;
   email: string;
   createdAt: Date;
+  avatarUrl?: string | null;
 };
 
 export class User {
@@ -14,6 +15,7 @@ export class User {
   public readonly username: string;
   public readonly email: string;
   public readonly createdAt: Date;
+  public readonly avatarUrl?: string | null;
 
   constructor(props: UserProps) {
     if (!props.firstName.trim()) {
@@ -34,5 +36,6 @@ export class User {
     this.username = props.username.trim().toLowerCase();
     this.email = props.email.trim().toLowerCase();
     this.createdAt = props.createdAt;
+    this.avatarUrl = props.avatarUrl ?? null;
   }
 }

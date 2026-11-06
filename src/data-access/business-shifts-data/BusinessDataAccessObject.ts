@@ -17,6 +17,16 @@ import {
   LoadingMainPageDataAccessInterface,
   LoadMainPage,
 } from "@/usecase/main-page/loading-main-page/LoadingMainPageDataAccessInterface";
+import {
+  NewBusinessRequestDAI,
+  NewBusinessRequestInput,
+  NewBusinessRequestOutput,
+} from "@/usecase/main-page/new-business-request/NewBusinessRequestDAI";
+import {
+  NewBusinessDAI,
+  NewBusinessInput,
+  NewBusinessOutput,
+} from "@/usecase/main-page/new-business/NewBusinessDAI";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "./shift/BusinessShiftsRAMDisk";
 
@@ -24,8 +34,22 @@ export class BussinessDataAccessObject
   implements
     LoadingMainPageDataAccessInterface,
     DeclineBusinessRequestDataAccessInterface,
-    AcceptBusinessRequestDataAccessInterface
+    AcceptBusinessRequestDataAccessInterface,
+    NewBusinessDAI,
+    NewBusinessRequestDAI
 {
+  async newBusinessRequested(
+    input: NewBusinessRequestInput,
+  ): Promise<NewBusinessRequestOutput> {
+    return { businessesRequested: await this.getBusinessRequested() };
+  }
+
+  async newBusiness(input: NewBusinessInput): Promise<NewBusinessOutput> {
+    await new BusinessRAMDisk().saveBusiness(input.business);
+
+    return { businesses: await new BusinessRAMDisk().getBusinesses() };
+  }
+
   async acceptBusinessRequest(input: Acceptinput): Promise<AcceptOutput> {
     const {
       data: { user },
@@ -165,7 +189,7 @@ export class BussinessDataAccessObject
 
     if (mostrecentBusiness !== null) {
       allShifts = await new BusinessShiftsRAMDisk().getBusinessShifts(
-        mostrecentBusiness,
+        mostrecentBusiness.id,
       );
     }
 

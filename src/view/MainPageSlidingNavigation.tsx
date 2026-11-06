@@ -1,4 +1,4 @@
-import { Component, createRef, type ReactNode } from "react";
+import { Component, createRef, type ComponentRef, type ReactNode } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -8,9 +8,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type PageIndex = 0 | 1 | 2 | 3 | 4 | 5;
+type PageIndex = 0 | 1 | 2 | 3 | 4;
 
 type MainSliderProps = {
+  activeIndex:
+    | ["Home"]
+    | ["Messages"]
+    | ["Trainings"]
+    | ["Members"]
+    | ["Profile"];
   pages: readonly ReactNode[];
   renderNavigation: (props: {
     activeIndex: PageIndex;
@@ -32,9 +38,8 @@ export class MainPageSlidingNavigation extends Component<
     width: 0,
   };
 
-  private sliderRef = createRef<ScrollView>();
+  private sliderRef = createRef<ComponentRef<typeof ScrollView>>();
   private selectedIndex: PageIndex = 0;
-
   componentDidUpdate(_prevProps: MainSliderProps, prevState: MainSliderState) {
     const { width } = this.state;
 
@@ -50,9 +55,12 @@ export class MainPageSlidingNavigation extends Component<
     const { width } = this.state;
     if (width <= 0) return;
 
+    this.selectedIndex = index;
+    this.setState({ activeIndex: index });
+
     this.sliderRef.current?.scrollTo({
       x: index * width,
-      animated: true,
+      animated: false,
     });
   };
 
@@ -62,12 +70,24 @@ export class MainPageSlidingNavigation extends Component<
 
     const index = Math.max(
       0,
-      Math.min(5, Math.round(event.nativeEvent.contentOffset.x / width)),
+      Math.min(
+        this.props.pages.length - 1,
+        Math.round(event.nativeEvent.contentOffset.x / width),
+      ),
     ) as PageIndex;
+
+    const activeIndex1 = [
+      "Home",
+      "Messages",
+      "Trainings",
+      "Members",
+      "Profile",
+    ] as const;
 
     if (index !== this.selectedIndex) {
       this.selectedIndex = index;
       this.setState({ activeIndex: index });
+      this.props.activeIndex[0] = activeIndex1[index];
     }
   };
 

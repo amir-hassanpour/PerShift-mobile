@@ -67,7 +67,6 @@ export class ChatPage extends Component<ChatProps> {
       chatName: chat.name,
       messages: viewModel.messages,
     };
-    console.log(chatName);
     previewViewModel.messages = messages;
 
     return (

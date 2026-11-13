@@ -19,7 +19,6 @@ export default function ModuleRoute() {
     setFailed(false);
 
     async function loadPage() {
-      console.log("Module route params:", { moduleID, trainingID });
       try {
         if (!moduleID || !trainingID) {
           throw new Error("Missing module or training ID");

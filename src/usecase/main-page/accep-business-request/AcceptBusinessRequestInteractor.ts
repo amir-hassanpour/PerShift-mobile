@@ -1,6 +1,6 @@
 import {
-    AcceptBusinessRequestDataAccessInterface,
-    Acceptinput,
+  AcceptBusinessRequestDataAccessInterface,
+  Acceptinput,
 } from "./AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInputBoundary } from "./AcceptBusinessRequestInputBoundary";
 import { AcceptBusinessRequestOutputBoundary } from "./AcceptBusinessRequestOutputBoundary";
@@ -24,6 +24,7 @@ export class AcceptBusinessRequestInteractor implements AcceptBusinessRequestInp
         shifts: output.shifts,
         businesses: output.businesses,
         requestedBusinesses: output.requestedBusinesses,
+        role: output.role,
       });
     } catch (error) {
       await this.outputBoundary.prepareForFailureView(error as Error);

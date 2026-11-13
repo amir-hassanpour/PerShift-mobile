@@ -31,8 +31,6 @@ export class BusinessShiftsRAMDisk
   private static shiftSaveQueue: Promise<void> = Promise.resolve();
 
   async createShift(input: CreateShiftInput): Promise<createShiftOutput> {
-    await this.saveShift(input.shift);
-
     const {
       data: { user },
       error: authError,
@@ -41,20 +39,45 @@ export class BusinessShiftsRAMDisk
     if (authError) throw authError;
     if (!user) throw new Error("You must be signed in");
 
-    const { error } = await supabase.from("shift").insert({
-      id: input.shift.shiftID,
-      strart_time: input.shift.startTime,
-      end_time: input.shift.endTime,
-      longitude: input.shift.longitude,
-      latitude: input.shift.latitude,
-      busienss_id: input.shift.businessID,
+    const shift = input.shift;
+
+    const { error: shiftError } = await supabase.from("shift").insert({
+      id: shift.shiftID,
+      start_time: shift.startTime.toISOString(),
+      end_time: shift.endTime.toISOString(),
+      longitude: shift.longitude,
+      latitude: shift.latitude,
+      business_id: shift.businessID,
       owner: user.id,
-      description: input.shift.description,
+      description: shift.description,
     });
 
-    if (error) throw error;
+    if (shiftError) throw shiftError;
 
-    return { shifts: await this.getBusinessShifts(input.shift.businessID) };
+    const profileIDs = [...new Set(input.userToAdd.map((member) => member.id))];
+
+    if (profileIDs.length > 0) {
+      const { error: assignmentError } = await supabase
+        .from("shift_assignment")
+        .insert(
+          profileIDs.map((profileID) => ({
+            shift_id: shift.shiftID,
+            profile_id: profileID,
+            business_id: shift.businessID,
+            owner: user.id,
+          })),
+        );
+
+      if (assignmentError) {
+        throw assignmentError;
+      }
+    }
+
+    await this.saveShift(shift);
+
+    return {
+      shifts: await this.getBusinessShifts(shift.businessID),
+    };
   }
 
   async newShift(inputData: NewShiftInputData): Promise<NewShiftOutput> {
@@ -64,11 +87,18 @@ export class BusinessShiftsRAMDisk
         inputData.endTime,
         inputData.latitude,
         inputData.longitude,
-        inputData.description ?? "",
         inputData.businessid,
         inputData.id,
+        inputData.description ?? "",
       ),
     );
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!user) throw new Error();
 
     let mostRecentBusienss =
       await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
@@ -78,7 +108,7 @@ export class BusinessShiftsRAMDisk
     }
 
     return {
-      shifts: await this.getBusinessShifts(""),
+      shifts: await this.getBusinessShifts(inputData.businessid),
     };
   }
 
@@ -142,6 +172,13 @@ export class BusinessShiftsRAMDisk
           shift.description ?? "",
         ),
     );
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!user) throw new Error();
 
     if (shiftedShifts !== undefined) {
       return shiftedShifts;

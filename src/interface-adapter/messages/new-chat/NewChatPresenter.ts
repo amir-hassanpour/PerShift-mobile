@@ -17,6 +17,6 @@ export class NewChatPresenter implements NewChatOutputBoundary {
   }
 
   async prepareForFailureView(error: Error): Promise<void> {
-    console.log(error.message);
+    throw error;
   }
 }

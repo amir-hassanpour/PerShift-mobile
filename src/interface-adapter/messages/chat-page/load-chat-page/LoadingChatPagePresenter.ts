@@ -18,6 +18,6 @@ export class LoadingChatPagePresenter implements LoadingChatPageOutputBoundary {
   }
 
   async prepareForFailureView(error: Error): Promise<void> {
-    console.log(error.message);
+    throw error;
   }
 }

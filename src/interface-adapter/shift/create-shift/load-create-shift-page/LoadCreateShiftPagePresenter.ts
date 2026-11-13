@@ -1,7 +1,7 @@
 import { LoadCreateShiftPageOutputBoundary } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageOutputBoundary";
 import { LoadCreateShiftPageOutputData } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageOutputData";
+import { LoadCreateShiftPageViewModel } from "../LoadCreateShiftPageViewModel";
 import { LoadCreateShiftPageState } from "./LoadCreateShiftPageState";
-import { LoadCreateShiftPageViewModel } from "./LoadCreateShiftPageViewModel";
 
 export class LoadCreateShiftPagePresenter implements LoadCreateShiftPageOutputBoundary {
   viewModel: LoadCreateShiftPageViewModel;
@@ -11,12 +11,13 @@ export class LoadCreateShiftPagePresenter implements LoadCreateShiftPageOutputBo
   }
 
   prepareForSuccessView(output: LoadCreateShiftPageOutputData): void {
-    this.viewModel.state = LoadCreateShiftPageState.SUCCESS;
+    this.viewModel.state = LoadCreateShiftPageState.SUCCESS_LOADING;
     this.viewModel.userToAdd = output.userToAdd;
+    this.viewModel.firePropertyChange();
   }
 
   prepareForFailureView(error: string): void {
-    this.viewModel.state = LoadCreateShiftPageState.SUCCESS;
-    throw new Error(error);
+    this.viewModel.state = LoadCreateShiftPageState.FAILURE_LOADING;
+    this.viewModel.firePropertyChange();
   }
 }

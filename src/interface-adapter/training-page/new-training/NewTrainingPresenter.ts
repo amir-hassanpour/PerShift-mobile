@@ -13,7 +13,6 @@ export class NewTrainingPresenter implements NewTrainingOutputBoundary {
   prepareForSuccessView(outputData: NewTrainingOutputData): void {
     this.viewModel.trainings = outputData.trainings;
     this.viewModel.state = NewTrainingState.SUCCESS;
-    console.log(outputData);
     this.viewModel.firePropertyChange();
   }
   prepareForFailureView(error: string): void {

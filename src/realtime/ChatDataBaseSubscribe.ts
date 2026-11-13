@@ -37,7 +37,6 @@ export class ChatDataBaseSubscribe {
           filter: `profile_id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log("new message recieved");
           try {
             const { data, error } = await supabase
               .from("chat")
@@ -45,7 +44,8 @@ export class ChatDataBaseSubscribe {
                 `
             id, 
             business_id,
-            chat_name
+            chat_name,
+            self
             `,
               )
               .eq("id", payload.new.chat_id)
@@ -55,14 +55,17 @@ export class ChatDataBaseSubscribe {
 
             let chat = new Chat(data.id, data.business_id, data.chat_name);
 
-            await this.controller.newChatController(chat);
+            await this.controller.newChatController({
+              chat: chat,
+              self: data.self,
+            });
           } catch (error) {
             throw error;
           }
         },
       )
       .subscribe((error) => {
-        console.log("subscibed to new chats");
+        throw error;
       });
   }
 }

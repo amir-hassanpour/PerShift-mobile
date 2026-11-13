@@ -15,7 +15,6 @@ export default function Index() {
     async function loadInitialScreen() {
       try {
         const { data, error } = await supabase.auth.getSession();
-        console.log(data?.session?.user.id);
 
         if (error) throw error;
         if (cancelled) return;

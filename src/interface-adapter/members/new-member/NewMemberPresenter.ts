@@ -11,7 +11,6 @@ export class NewMemberPresenter implements NewMemberOutputBoundary {
   }
 
   prepareForSuccessView(outputData: NewMemberOutputData): void {
-    console.log(outputData);
     this.viewModel.members = outputData.members;
     this.viewModel.state = NewMemberState.SUCCESS;
     this.viewModel.firePropertyChange();

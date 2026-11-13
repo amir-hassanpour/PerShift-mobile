@@ -11,6 +11,7 @@ import { TrainingsRAMDisk } from "@/data-access/trainings/trainings-data/Trainin
 import { TrainingsDataAccessObject } from "@/data-access/trainings/trainings-data/TraininsDataAccessObject";
 import { UserRAMDisk } from "@/data-access/user-data/UserRAMDisk";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
+import { User } from "@/entity/User";
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
 import { AcceptBusinessRequestPresenter } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestPresenter";
 import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/decline-business-request/DeclineBusinessRequestController";
@@ -35,6 +36,18 @@ import { NewMessageController } from "@/interface-adapter/messages/chat-page/new
 import { NewMessagePresenter } from "@/interface-adapter/messages/chat-page/new-message/NewMessagePresenter";
 import { SendMessageController } from "@/interface-adapter/messages/chat-page/send-message/SendMessageConttroller";
 import { SendMessagePresenter } from "@/interface-adapter/messages/chat-page/send-message/SendMessagePresenter";
+import { ChatExistsController } from "@/interface-adapter/messages/create-chat/chat-exists/ChatExistsController";
+import { ChatExistsPresenter } from "@/interface-adapter/messages/create-chat/chat-exists/ChatExistsPresenter";
+import { ChatExistsViewModel } from "@/interface-adapter/messages/create-chat/chat-exists/ChatExistsViewModel";
+import { CreateChatController } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatController";
+import { CreateChatPresenter } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatPresenter";
+import { CreateChatViewModel } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatViewModel";
+import { LoadCreateChatPageController } from "@/interface-adapter/messages/create-chat/load-create-chat-page/LoadCreateChatPageController";
+import { LoadCreateChatPagePresenter } from "@/interface-adapter/messages/create-chat/load-create-chat-page/LoadCreateChatPagePresenter";
+import { LoadCreateGroupchatPageController } from "@/interface-adapter/messages/create-chat/load-create-group-chat-page/LoadCreateGroupchatPageController";
+import { LoadCreateGroupchatPagePresenter } from "@/interface-adapter/messages/create-chat/load-create-group-chat-page/LoadCreateGroupchatPagePresenter";
+import { LoadCreateGroupchatPageViewModel } from "@/interface-adapter/messages/create-chat/load-create-group-chat-page/LoadCreateGroupchatPageViewModel";
+import { LoadCreateChatPageViewModel } from "@/interface-adapter/messages/create-chat/LoadCreateChatPageViewModel";
 import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
 import { LoadingMessagesPagePresenter } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPagePresenter";
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
@@ -43,9 +56,11 @@ import { NewChatPresenter } from "@/interface-adapter/messages/new-chat/NewChatP
 import { LoadProfilePageController } from "@/interface-adapter/profile/load-profile-page/LoadProfilePageController";
 import { LoadProfilePagePresenter } from "@/interface-adapter/profile/load-profile-page/LoadProfilePagePresenter";
 import { LoadProfilePageViewModel } from "@/interface-adapter/profile/LoadProfilePageViewModel";
+import { CreateShiftController } from "@/interface-adapter/shift/create-shift/create-shift/CreateShiftController";
+import { CreateShiftPresenter } from "@/interface-adapter/shift/create-shift/create-shift/CreateShiftPresenter";
 import { LoadCreateShiftPageController } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageController";
 import { LoadCreateShiftPagePresenter } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPagePresenter";
-import { LoadCreateShiftPageViewModel } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageViewModel";
+import { LoadCreateShiftPageViewModel } from "@/interface-adapter/shift/create-shift/LoadCreateShiftPageViewModel";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
 import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
@@ -85,9 +100,14 @@ import { NewMemberInteractor } from "@/usecase/members/new-member/NewMemberInter
 import { LoadingChatPageInteractor } from "@/usecase/messages/chat-page/load-chat-page/LoadingChatPageInteractor";
 import { NewMessageInteractor } from "@/usecase/messages/chat-page/new-message/NewMessageInteractor";
 import { SendMessageInteractor } from "@/usecase/messages/chat-page/send-message/SendMessageInteractor";
+import { ChatExistsInteractor } from "@/usecase/messages/create-chat/chat_exists/ChatExistsInteractor";
+import { CreateChatInteractor } from "@/usecase/messages/create-chat/create-chat/CreateChatInteractor";
+import { LoadCreateChatPageInteractor } from "@/usecase/messages/create-chat/load-create-chat-page/LoadCreateChatPageInteractor";
+import { LoadCreateGroupchatPageInteractor } from "@/usecase/messages/create-chat/load-create-groupchat-page/LoadCreateGroupchatPageInteractor";
 import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
 import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor";
 import { LoadProfilePageInteractor } from "@/usecase/profile/load-profile-page/LoadProfilePageInteractor";
+import { CreateShiftInteractor } from "@/usecase/shift/create-shift/create-shift/CreateShiftInteractor";
 import { LoadCreateShiftPageInteractor } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
 import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
@@ -102,6 +122,8 @@ import { MainPageView } from "@/view/main-page/MainPageView";
 import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
 import { MembersView } from "@/view/members/MembersView";
 import { ChatPage } from "@/view/messages/ChatPage";
+import CreateChatView from "@/view/messages/CreateChatView";
+import CreateGroupChatView from "@/view/messages/CreateGroupChatView";
 import { Messages } from "@/view/messages/Messages";
 import { NavigationBar } from "@/view/navigation-bar/NavigationBar";
 import NoAccessView from "@/view/no-access-view/NoAccessView";
@@ -113,6 +135,10 @@ import { SignupView } from "@/view/user/signup/SignupView";
 import { ReactElement } from "react";
 
 export default class Builder {
+  makeGroupChatPage: any;
+  makeCreateGroupChatPage() {
+    throw new Error("Method not implemented.");
+  }
   userSignupInteractor: UserSignupInteractor | undefined = undefined;
   userSignupOutputBoundary: UserSignupOutputBoundary | undefined = undefined;
   userSignupDAO: UserSignupDataAccessInterface | undefined = undefined;
@@ -275,7 +301,145 @@ export default class Builder {
   loadCreateShiftPageController: LoadCreateShiftPageController | undefined =
     undefined;
 
-  makeCreateShiftPage() {
+  createShiftOuptutBoundary: CreateShiftPresenter | undefined = undefined;
+  createShiftDAO: BusinessShiftsRAMDisk | undefined = undefined;
+  createShiftInteractor: CreateShiftInteractor | undefined = undefined;
+  createShiftController: CreateShiftController | undefined = undefined;
+
+  loadCreateChatPageViewModel: LoadCreateChatPageViewModel =
+    new LoadCreateChatPageViewModel();
+  loadCreateChatPageDAO: ChatsDataAccessObject | undefined = undefined;
+  loadCreateChatPageOutputBoundary: LoadCreateChatPagePresenter | undefined =
+    undefined;
+  loadCreateChatPageInteractor: LoadCreateChatPageInteractor | undefined =
+    undefined;
+  loadCreateChatPageController: LoadCreateChatPageController | undefined =
+    undefined;
+
+  createChatViewModel: CreateChatViewModel = new CreateChatViewModel();
+  createChatDAO: ChatsDataAccessObject | null = null;
+  createChatOutputBoundary: CreateChatPresenter | null = null;
+  createChatInteractor: CreateChatInteractor | null = null;
+  createChatController: CreateChatController | null = null;
+
+  chatExistsViewModel: ChatExistsViewModel = new ChatExistsViewModel();
+  chatExistsDAO: ChatsDataAccessObject | null = null;
+  chatExistsOutputBoundary: ChatExistsPresenter | null = null;
+  chatExistsInteractor: ChatExistsInteractor | null = null;
+  chatExistsController: ChatExistsController | null = null;
+
+  loadCreateGroupchatPageViewModel: LoadCreateGroupchatPageViewModel =
+    new LoadCreateGroupchatPageViewModel();
+  loadCreateGroupchatPageDAO: ChatsDataAccessObject | null = null;
+  loadCreateGroupchatPageOutputBoundary: LoadCreateGroupchatPagePresenter | null =
+    null;
+  loadCreateGroupchatPageInteractor: LoadCreateGroupchatPageInteractor | null =
+    null;
+  loadCreateGroupchatPageController: LoadCreateGroupchatPageController | null =
+    null;
+
+  makeGroupchatPage(): ReactElement {
+    this.loadCreateGroupchatPageDAO = new ChatsDataAccessObject();
+    this.loadCreateGroupchatPageOutputBoundary =
+      new LoadCreateGroupchatPagePresenter(
+        this.loadCreateGroupchatPageViewModel,
+      );
+    this.loadCreateGroupchatPageInteractor =
+      new LoadCreateGroupchatPageInteractor(
+        this.loadCreateGroupchatPageDAO,
+        this.loadCreateGroupchatPageOutputBoundary,
+      );
+    this.loadCreateGroupchatPageController =
+      new LoadCreateGroupchatPageController(
+        this.loadCreateGroupchatPageInteractor,
+      );
+
+    if (
+      this.chatExistsController === null ||
+      this.createChatController === null ||
+      this.loadCreateGroupchatPageController === null
+    ) {
+      throw new Error("Chat controllers are not initialized");
+    }
+
+    return (
+      <CreateGroupChatView
+        loadController={this.loadCreateGroupchatPageController}
+        loadViewModel={this.loadCreateGroupchatPageViewModel}
+        createController={this.createChatController}
+        createViewModel={this.createChatViewModel}
+      />
+    );
+  }
+  makeCreateChatPage(): ReactElement {
+    this.createChatDAO = new ChatsDataAccessObject();
+    this.createChatOutputBoundary = new CreateChatPresenter(
+      this.createChatViewModel,
+      this.loadCreateChatPageViewModel,
+      this.loadCreateGroupchatPageViewModel,
+    );
+    this.createChatInteractor = new CreateChatInteractor(
+      this.createChatDAO,
+      this.createChatOutputBoundary,
+    );
+    this.createChatController = new CreateChatController(
+      this.createChatInteractor,
+    );
+
+    this.chatExistsDAO = new ChatsDataAccessObject();
+    this.chatExistsOutputBoundary = new ChatExistsPresenter(
+      this.chatExistsViewModel,
+    );
+    this.chatExistsInteractor = new ChatExistsInteractor(
+      this.chatExistsDAO,
+      this.chatExistsOutputBoundary,
+    );
+    this.chatExistsController = new ChatExistsController(
+      this.chatExistsInteractor,
+    );
+
+    this.loadCreateChatPageDAO = new ChatsDataAccessObject();
+    this.loadCreateChatPageOutputBoundary = new LoadCreateChatPagePresenter(
+      this.loadCreateChatPageViewModel,
+    );
+    this.loadCreateChatPageInteractor = new LoadCreateChatPageInteractor(
+      this.loadCreateChatPageDAO,
+      this.loadCreateChatPageOutputBoundary,
+    );
+    this.loadCreateChatPageController = new LoadCreateChatPageController(
+      this.loadCreateChatPageInteractor,
+    );
+
+    return (
+      <CreateChatView
+        chatExistsController={this.chatExistsController}
+        chatExistsViewModel={this.chatExistsViewModel}
+        createChatController={this.createChatController}
+        createChatViewModel={this.createChatViewModel}
+        controller={this.loadCreateChatPageController}
+        viewModel={this.loadCreateChatPageViewModel}
+      />
+    );
+  }
+
+  makeCreateShift(): CreateShiftController {
+    this.createShiftOuptutBoundary = new CreateShiftPresenter(
+      this.loadingMainPageViewModel,
+      this.loadCreateShiftPageViewModel,
+    );
+    this.createShiftDAO = new BusinessShiftsRAMDisk();
+    this.createShiftInteractor = new CreateShiftInteractor(
+      this.createShiftDAO,
+      this.createShiftOuptutBoundary,
+    );
+    this.createShiftController = new CreateShiftController(
+      this.createShiftInteractor,
+    );
+
+    return this.createShiftController;
+  }
+
+  async makeCreateShiftPage() {
     this.loadCreateShiftPageOutputBoundary = new LoadCreateShiftPagePresenter(
       this.loadCreateShiftPageViewModel,
     );
@@ -288,11 +452,28 @@ export default class Builder {
       this.loadCreateShiftPageInteractor,
     );
 
+    const createShiftFunction = this.makeCreateShift();
+
+    const buisness =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!buisness) throw new Error("You don't have default buisness");
+
     return (
       <CreateShiftView
         controller={this.loadCreateShiftPageController}
         viewModel={this.loadCreateShiftPageViewModel}
-        onCreateShift={async () => {}}
+        businessID={buisness.id}
+        onCreateShift={async (collectedValues: {
+          startTime: Date | null;
+          endTime: Date | null;
+          address: string;
+          description: string;
+          users: User[];
+          businessID: string;
+        }) => {
+          createShiftFunction.createShift(collectedValues);
+        }}
       />
     );
   }
@@ -375,8 +556,6 @@ export default class Builder {
 
     const businessID = business.id;
 
-    console.log(businessID, "businessID");
-
     return new MemberDataBaseSubscribe({
       businessID: businessID,
       controller: this.newMemberController,
@@ -422,18 +601,7 @@ export default class Builder {
     const viewModel = new LoadTrainingPageViewModel();
 
     this.loadTrainingPageViewModel.set(trainingID, viewModel);
-    console.log(
-      "Presenter exists?",
-      this.newModuleOutputBoundary instanceof NewModulePresenter,
-    );
 
-    console.log(
-      "Same map reference?",
-      this.newModuleOutputBoundary?.viewModel ===
-        this.loadTrainingPageViewModel,
-    );
-
-    console.log("Builder map size:", this.loadTrainingPageViewModel.size);
     this.loadTrainingPageDAO = new TrainingsDataAccessObject();
     this.loadTrainingPageOutputBoundary = new LoadTrainingPagePresenter(
       viewModel,

@@ -1,4 +1,4 @@
-import { AcceptBusinessRequestOutputData } from "./AcceptBusinessRequestOuputData";
+import { AcceptBusinessRequestOutputData } from "./AcceptBusinessRequestOutputData";
 
 export interface AcceptBusinessRequestOutputBoundary {
   prepareForSuccessView(output: AcceptBusinessRequestOutputData): Promise<void>;

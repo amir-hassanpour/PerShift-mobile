@@ -103,7 +103,6 @@ export class UserSignupDataAccessObject implements UserSignupDataAccessInterface
     });
 
     if (error) {
-      console.log(error.status, error.name, error.message);
       switch (error.code) {
         case "email_address_invalid":
           throw new UserSignUpError(

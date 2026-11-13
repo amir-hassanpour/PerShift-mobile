@@ -139,7 +139,6 @@ export class MembersView extends React.Component<Props, State> {
         .toLowerCase()
         .includes(query),
     );
-    console.log(members);
 
     return (
       <SafeAreaView style={styles.safeArea}>

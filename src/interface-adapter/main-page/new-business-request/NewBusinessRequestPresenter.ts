@@ -17,7 +17,6 @@ export class NewBusinessRequestPresenter implements NewBusinessRequestOutputBoun
   }
 
   prepareForSuccesView(output: NewBusinessRequestOutputData): void {
-    console.log(output.businessesRequested);
     this.viewModelMainPage.businessRequested = output.businessesRequested;
     this.viewModelProfile.businessesRequested = output.businessesRequested;
     this.viewModelMainPage.state = NewBusinessRequestState.SUCCUESS;

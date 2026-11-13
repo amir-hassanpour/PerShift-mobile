@@ -3,7 +3,7 @@ export type NewShiftInputData = {
   endTime: Date;
   latitude: number | null;
   longitude: number | null;
-  description?: string;
+  description: string | null;
   businessid: string;
   id: string;
 };

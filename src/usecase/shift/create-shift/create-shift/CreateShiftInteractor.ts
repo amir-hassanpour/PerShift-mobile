@@ -16,17 +16,33 @@ export class CreateShiftInteractor implements CreateShiftInputBoundary {
 
   async createShift(input: CreateShiftInputData): Promise<void> {
     try {
+      if (input.startTime === null) {
+        this.outputBoundary.prepareForStartTimeMissingView();
+        return;
+      }
+
+      if (input.endTime === null) {
+        this.outputBoundary.prepareForEndTimeMissingVlaue();
+        return;
+      }
+
+      if (input.startTime.getTime() >= input.endTime.getTime()) {
+        this.outputBoundary.prepareForInvalidTimeView();
+        return;
+      }
+
       const id: string = Crypto.randomUUID();
       const result = await this.dao.createShift({
         shift: new Shift(
           input.startTime,
           input.endTime,
-          input.latitude,
-          input.longitude,
+          null,
+          null,
           input.businessID,
           id,
           input.description,
         ),
+        userToAdd: input.users,
       });
       await this.outputBoundary.prepareForSuccessView(result);
     } catch (error) {

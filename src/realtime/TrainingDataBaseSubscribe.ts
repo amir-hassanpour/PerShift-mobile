@@ -37,14 +37,11 @@ export class TrainingDataBaseSubscribe {
           filter: `profile_id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log("Full training event:", JSON.stringify(payload, null, 2));
-
           if (!payload.new.training_id) {
             console.error("Assignment event has no training_id:", payload);
             return;
           }
           try {
-            console.log(payload.new, user.id);
             const { data, error } = await supabase
               .from("training")
               .select(
@@ -72,8 +69,6 @@ export class TrainingDataBaseSubscribe {
           }
         },
       )
-      .subscribe((error) => {
-        console.log("subscribed to new training");
-      });
+      .subscribe((error) => {});
   }
 }

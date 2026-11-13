@@ -6,7 +6,7 @@ export type NewShift = {
   endTime: Date;
   latitude: number | null;
   longitude: number | null;
-  description?: string;
+  description: string | null;
   businessid: string;
   id: string;
 };
@@ -47,7 +47,6 @@ export class ShiftDataBaseSubscribe {
           filter: `profile_id=eq.${user.id}`,
         },
         async (payload) => {
-          console.log("Assignment event received:", payload.new);
           try {
             const { data, error } = await supabase
               .from("shift")
@@ -58,13 +57,16 @@ export class ShiftDataBaseSubscribe {
             end_time,
             latitude,
             longitude,
-            business_id
+            business_id,
+            description
           `,
               )
               .eq("id", payload.new.shift_id)
               .single();
 
-            if (error) throw error;
+            if (error) {
+              throw error;
+            }
 
             let shift: NewShift = {
               startTime: new Date(data.start_time),
@@ -74,6 +76,7 @@ export class ShiftDataBaseSubscribe {
                 data.longitude === null ? null : Number(data.longitude),
               businessid: data.business_id,
               id: data.id,
+              description: data.description,
             };
 
             await this.controller.newShiftController(shift);
@@ -83,8 +86,6 @@ export class ShiftDataBaseSubscribe {
         },
       )
       .subscribe((status, error) => {
-        console.log("Shift subscription status:", status);
-
         if (error) {
           console.error("Shift subscription error:", error);
         }

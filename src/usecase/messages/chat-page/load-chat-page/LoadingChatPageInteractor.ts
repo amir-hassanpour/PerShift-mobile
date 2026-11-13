@@ -23,7 +23,9 @@ export class LoadingChatPageInteractor implements LoadingChatPageInputBoundary {
 
       await this.outputBoundary.prepareForSuccessView(result);
     } catch (error) {
-      console.log("couldn't upload the chat page");
+      this.outputBoundary.prepareForFailureView(
+        new Error("couldn't load chat page interactor error"),
+      );
     }
   }
 }

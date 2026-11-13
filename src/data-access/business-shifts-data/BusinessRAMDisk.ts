@@ -82,7 +82,31 @@ export class BusinessRAMDisk {
 
     this.businesses = storedValue === null ? [] : JSON.parse(storedValue);
 
-    return this.businesses;
+    const busienssWithTime: Business[] = [];
+    const businessWithtoutTime: Business[] = [];
+
+    for (const business of this.businesses) {
+      if (
+        business.lastCheckedIn === null ||
+        business.lastCheckedIn === undefined
+      ) {
+        businessWithtoutTime.push(business);
+      }
+
+      busienssWithTime.push(business);
+    }
+
+    const businesses = Array.from(
+      new Map(
+        busienssWithTime.map((business) => [business.id, business]),
+      ).values(),
+    ).sort(
+      (a, b) =>
+        new Date(b.lastCheckedIn).getTime() -
+        new Date(a.lastCheckedIn).getTime(),
+    );
+
+    return [...businesses, ...businessWithtoutTime];
   }
 
   async deleteAllBusinesses(): Promise<void> {

@@ -8,10 +8,11 @@ export class NewChatController {
     this.interactor = interactor;
   }
 
-  async newChatController(chat: Chat) {
+  async newChatController(input: { chat: Chat; self?: boolean }) {
     await this.interactor.newChat({
-      business_id: chat.business_id,
-      chat_id: chat.id,
+      business_id: input.chat.business_id,
+      chat_id: input.chat.id,
+      self: input.self,
     });
   }
 }

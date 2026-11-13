@@ -18,6 +18,5 @@ export class NewShiftPresenter implements NewShiftOutputBoundary {
 
   async prepareForFailureView(error: string): Promise<void> {
     this.viewModel.state = NewShiftState.FAILURE;
-    console.log(error);
   }
 }

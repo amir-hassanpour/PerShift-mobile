@@ -5,6 +5,7 @@ export class Chat {
   lastText: string;
   lastTextedAt: Date | undefined;
   messageCount: number;
+  self?: boolean;
 
   constructor(id: string, business_id: string, name: string);
 
@@ -31,5 +32,9 @@ export class Chat {
     this.lastTextedAt = lastTextedAt;
     this.messageCount = messageCount;
     this.lastText = lastText;
+  }
+
+  setSelf(self: boolean) {
+    this.self = self;
   }
 }

@@ -53,7 +53,6 @@ export class BusinessDataBaseSubscribe {
         },
       )
       .subscribe((status, error) => {
-        console.log("subscribed to business sttaus:", status);
         if (error) {
           throw error;
         }

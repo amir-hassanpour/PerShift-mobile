@@ -1,11 +1,10 @@
 import { User } from "@/entity/User";
 
 export type CreateShiftInputData = {
-  userToAdd: User[];
-  startTime: Date;
-  endTime: Date;
-  latitude: number | null;
-  longitude: number | null;
-  description: string | null;
+  startTime: Date | null;
+  endTime: Date | null;
+  address: string;
+  description: string;
+  users: User[];
   businessID: string;
 };

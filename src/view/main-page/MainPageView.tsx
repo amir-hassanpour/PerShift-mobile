@@ -9,6 +9,7 @@ import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/
 import { LoadingMainPageController } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageController";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
 import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
+import { router } from "expo-router";
 
 type MainPageProps = {
   controller: LoadingMainPageController;
@@ -36,6 +37,25 @@ export class MainPageView extends Component<MainPageProps> {
     this.unsubscribe?.();
   }
 
+  renderCreateShiftButton() {
+    if (!this.props.viewModel.role?.canCreateShifts) {
+      return null;
+    }
+
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => router.push("/create-shift/CreateShiftView")}
+        style={({ pressed }) => [
+          styles.createButton,
+          pressed && styles.createButtonPressed,
+        ]}
+      >
+        <Text style={styles.createButtonText}>Create shift</Text>
+      </Pressable>
+    );
+  }
+
   renderMainContent() {
     const { state, shifts, requestedBusinesses, business } = {
       state: this.props.viewModel.state,
@@ -50,6 +70,8 @@ export class MainPageView extends Component<MainPageProps> {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your shifts</Text>
           </View>
+
+          {this.renderCreateShiftButton()}
 
           {shifts.map((shift) => (
             <Pressable
@@ -100,6 +122,9 @@ export class MainPageView extends Component<MainPageProps> {
             {showRequests ? "Requested businesses" : "Your shifts"}
           </Text>
         </View>
+
+        {this.renderCreateShiftButton()}
+
         {showRequests && (
           <View style={styles.requestList}>
             {requestedBusinesses.map((business) => (

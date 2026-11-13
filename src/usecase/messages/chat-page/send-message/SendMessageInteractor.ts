@@ -23,7 +23,6 @@ export class SendMessageInteractor implements SendMessageInputBoundary {
   }
 
   async sendMessage(inputData: SendMessageInputData): Promise<void> {
-    console.log(inputData);
     try {
       const messages = await this.dao.sendMessage(
         new Message(
@@ -37,7 +36,6 @@ export class SendMessageInteractor implements SendMessageInputBoundary {
 
       this.outputBoundary.prepareForSuccessView(messages);
     } catch (error) {
-      console.log(error);
       throw new Error("wasn't able to send the new message in the interactor");
     }
   }

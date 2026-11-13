@@ -5,7 +5,14 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
 import { Component, ReactElement } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export type MessagesProps = {
@@ -20,8 +27,12 @@ export type props = {
 };
 
 export class Messages extends Component<MessagesProps> {
-  state: { activeChat: ReactElement | null } = {
+  state: {
+    activeChat: ReactElement | null;
+    searchQuery: string;
+  } = {
     activeChat: null,
+    searchQuery: "",
   };
   private unsubscribe?: () => void;
 
@@ -57,6 +68,12 @@ export class Messages extends Component<MessagesProps> {
       user_id: this.props.viewModel.user_id,
     };
 
+    const query = this.state.searchQuery.trim().toLocaleLowerCase();
+
+    const filteredChats = chats.filter((chat) =>
+      chat.name.toLocaleLowerCase().includes(query),
+    );
+
     return (
       <SafeAreaView style={styles.screen}>
         <StatusBar style="dark" />
@@ -75,10 +92,9 @@ export class Messages extends Component<MessagesProps> {
               </Text>
 
               <Pressable
-                disabled
                 accessibilityRole="button"
-                accessibilityLabel="New message"
-                accessibilityState={{ disabled: true }}
+                accessibilityLabel="Create chat"
+                onPress={() => router.push("/create-chat/CreateChatView")}
                 style={styles.composeButton}
               >
                 <SymbolView
@@ -94,13 +110,7 @@ export class Messages extends Component<MessagesProps> {
               </Pressable>
             </View>
 
-            <Pressable
-              disabled
-              accessibilityRole="button"
-              accessibilityLabel="Search messages"
-              accessibilityState={{ disabled: true }}
-              style={styles.search}
-            >
+            <View style={styles.search}>
               <SymbolView
                 name={{
                   ios: "magnifyingglass",
@@ -111,8 +121,19 @@ export class Messages extends Component<MessagesProps> {
                 size={20}
                 style={{ width: 20, height: 20 }}
               />
-              <Text style={styles.searchText}>Search messages</Text>
-            </Pressable>
+
+              <TextInput
+                value={this.state.searchQuery}
+                onChangeText={(searchQuery) => this.setState({ searchQuery })}
+                placeholder="Search chats"
+                placeholderTextColor="#718099"
+                accessibilityLabel="Search chats by name"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+                style={styles.searchText}
+              />
+            </View>
 
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>Your chats</Text>
@@ -122,8 +143,9 @@ export class Messages extends Component<MessagesProps> {
           <FlatList
             style={styles.list}
             contentContainerStyle={styles.listContent}
-            data={chats}
-            extraData={chats.slice()}
+            data={filteredChats}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             keyExtractor={(chat) => chat.id}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => {
@@ -194,7 +216,13 @@ export class Messages extends Component<MessagesProps> {
                   />
                 </View>
 
-                <Text style={styles.emptyTitle}>No messages yet</Text>
+                <Text style={styles.emptyTitle}>
+                  {query ? "No chats found" : "No messages yet"}
+                </Text>
+
+                {query !== "" && (
+                  <Text style={styles.emptyDetail}>Try a different name.</Text>
+                )}
               </View>
             }
           />
@@ -269,8 +297,10 @@ const styles = StyleSheet.create({
   },
   searchText: {
     flex: 1,
-    color: "#718099",
+    minWidth: 0,
+    color: "#152A4A",
     fontSize: 15,
+    paddingVertical: 0,
   },
   listHeader: {
     flexDirection: "row",

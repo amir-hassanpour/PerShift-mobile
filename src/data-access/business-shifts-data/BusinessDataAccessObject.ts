@@ -8,6 +8,7 @@ import {
   DeclineBusinessRequestOutput,
 } from "@/usecase/main-page/decline-business-request/DeclineBusinessRequestDataAccessInterface";
 
+import { Role } from "@/entity/Role";
 import {
   AcceptBusinessRequestDataAccessInterface,
   Acceptinput,
@@ -27,6 +28,7 @@ import {
   NewBusinessInput,
   NewBusinessOutput,
 } from "@/usecase/main-page/new-business/NewBusinessDAI";
+import { RoleRAMDisk } from "../user-data/role/RoleRAMDisk";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "./shift/BusinessShiftsRAMDisk";
 
@@ -59,13 +61,49 @@ export class BussinessDataAccessObject
     if (authError) throw authError;
     if (!user) throw new Error("You must be signed in.");
 
-    const { data, error } = await supabase
+    const { data: assignment, error } = await supabase
       .from("business_role_assignment")
       .update({ role_accepted: "accepted" })
       .eq("business_name", input.businessId)
       .eq("profile_id", user.id)
       .eq("role_accepted", "pending")
-      .select("profile_id");
+      .select("role_id")
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!assignment) {
+      throw new Error("No pending business request was found");
+    }
+
+    const { data: roleData, error: roleError } = await supabase
+      .from("roles")
+      .select(
+        `
+    id,
+    role_name,
+    business_id,
+    can_invite_members,
+    can_create_shifts,
+    can_view_assigned_members_hours,
+    owner
+  `,
+      )
+      .eq("id", assignment.role_id)
+      .eq("business_id", input.businessId)
+      .maybeSingle();
+
+    if (roleError) throw roleError;
+    if (!roleData) throw new Error("Role wasn't found");
+
+    const role = new Role({
+      id: roleData.id,
+      roleName: roleData.role_name,
+      businessID: roleData.business_id,
+      canInviteMembers: roleData.can_invite_members,
+      canCreateShifts: roleData.can_create_shifts,
+      canViewAssignedMembersHours: roleData.can_view_assigned_members_hours,
+      owner: roleData.owner,
+    });
 
     let newBusinessAccepted = await this.getbusinessInformation(
       input.businessId,
@@ -79,6 +117,7 @@ export class BussinessDataAccessObject
       shifts: reloadMainPage.shifts,
       businesses: reloadMainPage.businesses,
       requestedBusinesses: reloadMainPage.businessRequested,
+      role: role,
     };
   }
 
@@ -193,10 +232,23 @@ export class BussinessDataAccessObject
       );
     }
 
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    let role: Role | undefined = undefined;
+    let roles: Role[] = [];
+
+    if (business) {
+      roles = await new RoleRAMDisk().getRoles(business.id);
+    }
+
+    if (roles.length > 0) role = roles[0];
+
     const loadMainPage: LoadMainPage = {
       businesses: allBusinesses,
       shifts: allShifts,
       businessRequested: allBusinessRequested,
+      role: role,
     };
 
     return loadMainPage;

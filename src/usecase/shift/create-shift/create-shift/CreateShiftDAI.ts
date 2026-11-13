@@ -1,6 +1,8 @@
 import { Shift } from "@/entity/Shift";
+import { User } from "@/entity/User";
 
 export type CreateShiftInput = {
+  userToAdd: User[];
   shift: Shift;
 };
 

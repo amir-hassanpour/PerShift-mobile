@@ -54,8 +54,6 @@ export class ModuleDataBaseSubscribe {
             if (!data) throw new Error("coudldn't retriece the new module");
             if (error) throw error;
 
-            console.log("new module");
-
             await this.controller.newModule({
               id: data.id,
               header: data.header,
@@ -69,8 +67,6 @@ export class ModuleDataBaseSubscribe {
           }
         },
       )
-      .subscribe((error) => {
-        console.log("module subscibe");
-      });
+      .subscribe((error) => {});
   }
 }

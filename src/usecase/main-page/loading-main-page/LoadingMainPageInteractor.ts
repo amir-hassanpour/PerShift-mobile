@@ -22,6 +22,7 @@ export class LoadingMainPageInteractor implements LoadingMainPageInputBoundary {
       businesses: loadMainPage.businesses,
       shifts: loadMainPage.shifts,
       businessRequested: loadMainPage.businessRequested,
+      role: loadMainPage.role,
     };
     await this.loadingMainPageOutputBoundary.prepareForSuccessView(outputData);
   }

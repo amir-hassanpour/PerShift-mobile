@@ -2,6 +2,7 @@ import { Business } from "@/entity/Business";
 import { Chat } from "@/entity/Chat";
 import { Message } from "@/entity/Message";
 import { Module } from "@/entity/Module";
+import { Role } from "@/entity/Role";
 import { Shift } from "@/entity/Shift";
 import { Training } from "@/entity/Training";
 import { User } from "@/entity/User";
@@ -13,6 +14,7 @@ import { MemberRAMDisk } from "../members/MemberRAMDisk";
 import { supabase } from "../supabase/client";
 import { ModuleRAMDisk } from "../trainings/trainings-data/ModuleRAMDisk";
 import { TrainingsRAMDisk } from "../trainings/trainings-data/TrainingsRAMDisk";
+import { RoleRAMDisk } from "../user-data/role/RoleRAMDisk";
 import { UserRAMDisk } from "../user-data/UserRAMDisk";
 
 export class StartupSync {
@@ -27,6 +29,7 @@ export class StartupSync {
     await this.syncMembers(businessID);
     await this.syncShifts(businessID);
     await this.syncTrainingsModules(businessID);
+    await this.syncRole(businessID);
   }
 
   async syncBusinesses(): Promise<string | null> {
@@ -40,13 +43,7 @@ export class StartupSync {
     if (authError) throw authError;
     if (!user) throw new Error("You must be signed in");
 
-    const cachedBusinesses = await disk.getBusinesses();
-
-    const businesses = Array.from(
-      new Map(
-        cachedBusinesses.map((business) => [business.id, business]),
-      ).values(),
-    ).sort((a, b) => b.lastCheckedIn.getTime() - a.lastCheckedIn.getTime());
+    const businesses = await disk.getBusinesses();
 
     const previousActiveID = businesses[0]?.id;
     const updatedBusinesses: Business[] = [];
@@ -144,10 +141,6 @@ export class StartupSync {
       updatedBusinesses[0] = new Business(next.id, next.name, new Date());
     }
 
-    updatedBusinesses.sort(
-      (a, b) => b.lastCheckedIn.getTime() - a.lastCheckedIn.getTime(),
-    );
-
     await new BusinessRAMDisk().deleteAllBusinesses();
 
     for (const business of updatedBusinesses) {
@@ -177,7 +170,7 @@ export class StartupSync {
     // Fetch every accessible chat before choosing the newest five.
     const { data: chats, error } = await supabase
       .from("chat")
-      .select("id, business_id, name:chat_name, last_message_at")
+      .select("id, business_id, self, name:chat_name, last_message_at, dm")
       .eq("business_id", businessID)
       .order("last_message_at", {
         ascending: false,
@@ -191,6 +184,40 @@ export class StartupSync {
     if (!chats) throw new Error("Could not retrieve chats");
 
     for (const chatData of chats) {
+      const { data: chatAssignment, error: error2 } = await supabase
+        .from("chat_assignment")
+        .select("profile_id")
+        .eq("chat_id", chatData.id)
+        .neq("profile_id", user.id)
+        .limit(3);
+
+      if (error2) throw error2;
+      if (!chatAssignment) throw new Error("chat not found");
+
+      const names = [];
+
+      for (const ids of chatAssignment) {
+        const { data: profile, error: error3 } = await supabase
+          .from("profiles")
+          .select("first_name, last_name")
+          .eq("profile_id", ids.profile_id)
+          .limit(1);
+
+        if (error3) throw error3;
+        if (!profile)
+          throw new Error("couldn't retrieve profile to construct chat name");
+
+        names.push(profile[0].first_name + " " + profile[0].last_name);
+      }
+      chatData.name = names.join(", ");
+
+      if (chatData.self === true) {
+        const curUser = await new UserRAMDisk().getCurrentUser();
+
+        if (!curUser) throw new Error("Current user is not save on disk");
+        chatData.name = curUser.firstName + " " + curUser.lastName;
+      }
+
       const {
         data: messageData,
         error: messagesError,
@@ -342,16 +369,10 @@ export class StartupSync {
     const disk = new BusinessShiftsRAMDisk();
 
     await new BusinessShiftsRAMDisk().deleteAllShifts();
-    console.log("your shifts:", shifts);
 
     for (const shift of shifts) {
       await disk.saveShift(shift);
-      console.log("shiftID: ", shift.shiftID);
     }
-    console.log(
-      "saved shifts: ",
-      await new BusinessShiftsRAMDisk().getBusinessShifts(businessID),
-    );
   }
 
   async syncMembers(businessID: string): Promise<void> {
@@ -589,7 +610,6 @@ export class StartupSync {
       .single();
 
     if (error) {
-      console.log("start up sycn user failure");
       throw error;
     }
     if (!data) throw new Error("User information wan't retrieved");
@@ -605,5 +625,64 @@ export class StartupSync {
         avatarUrl: data.avatar_url ?? null,
       }),
     );
+  }
+
+  async syncRole(businessID: string): Promise<void> {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in");
+
+    const { data: assignment, error: assignmentError } = await supabase
+      .from("business_role_assignment")
+      .select("role_id")
+      .eq("profile_id", user.id)
+      .eq("business_name", businessID)
+      .eq("role_accepted", "accepted")
+      .maybeSingle();
+
+    if (assignmentError) throw assignmentError;
+
+    const disk = new RoleRAMDisk();
+
+    if (!assignment) {
+      await disk.deleteBusinessRoles(businessID);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("roles")
+      .select(
+        `
+      id,
+      role_name,
+      business_id,
+      can_invite_members,
+      can_create_shifts,
+      can_view_assigned_members_hours,
+      owner
+    `,
+      )
+      .eq("id", assignment.role_id)
+      .eq("business_id", businessID)
+      .single();
+
+    if (error) throw error;
+
+    const role = new Role({
+      id: data.id,
+      roleName: data.role_name,
+      businessID: data.business_id,
+      canInviteMembers: data.can_invite_members,
+      canCreateShifts: data.can_create_shifts,
+      canViewAssignedMembersHours: data.can_view_assigned_members_hours,
+      owner: data.owner,
+    });
+
+    await disk.deleteBusinessRoles(businessID);
+    await disk.saveRole(role);
   }
 }

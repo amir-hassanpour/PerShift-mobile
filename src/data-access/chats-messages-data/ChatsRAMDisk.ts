@@ -1,5 +1,6 @@
 import { Chat } from "@/entity/Chat";
 import Storage from "expo-sqlite/kv-store";
+import { BusinessRAMDisk } from "../business-shifts-data/BusinessRAMDisk";
 
 const CHATS_KEY = "chats";
 const MAX_CHATS = 5;
@@ -58,35 +59,37 @@ export class ChatsRAMDisk {
   }
 
   async getChats(): Promise<Chat[]> {
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) return [];
+
     const storedValue = await Storage.getItem(CHATS_KEY);
 
-    if (storedValue === null) {
-      return [];
-    }
+    if (storedValue === null) return [];
 
     const storedChats: StoredChat[] = JSON.parse(storedValue);
 
     return storedChats
+      .filter((stored) => stored.business_id === business.id)
       .map(
         (stored) =>
           new Chat(
             stored.id,
-            stored.lastText,
+            stored.business_id,
             stored.name,
-            stored.lastTextedAt !== undefined
+            stored.lastTextedAt != null
               ? new Date(stored.lastTextedAt)
               : undefined,
             stored.messageCount,
-            stored.business_id,
+            stored.lastText,
           ),
       )
       .sort(
         (a, b) =>
-          (b.lastTextedAt !== undefined ? b.lastTextedAt.getTime() : 0) -
-            (a.lastTextedAt !== undefined ? a.lastTextedAt.getTime() : 0) ||
+          (b.lastTextedAt?.getTime() ?? 0) - (a.lastTextedAt?.getTime() ?? 0) ||
           a.id.localeCompare(b.id),
-      )
-      .slice(0, MAX_CHATS);
+      );
   }
 
   async getChatByID(chat_id: string): Promise<Chat | undefined> {

@@ -19,6 +19,6 @@ export class NewMessagePresenter implements NewMessageOutputBoundary {
   }
 
   async prepareForFailureView(error: Error): Promise<void> {
-    console.log(error.message);
+    throw error;
   }
 }

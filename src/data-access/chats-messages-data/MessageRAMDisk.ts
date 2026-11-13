@@ -78,7 +78,7 @@ export class MessagesRAMDisk {
       )
       .sort(
         (a, b) =>
-          b.time.getTime() - a.time.getTime() || a.id.localeCompare(b.id),
+          a.time.getTime() - b.time.getTime() || a.id.localeCompare(b.id),
       )
       .slice(0, MAX_MESSAGES);
   }

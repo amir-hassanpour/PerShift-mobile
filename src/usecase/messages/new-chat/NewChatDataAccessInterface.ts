@@ -3,6 +3,7 @@ import { Chat } from "@/entity/Chat";
 export type NewChatInput = {
   chat_id: string;
   business_id: string;
+  self?: boolean;
 };
 
 export type NewChatOutput = {

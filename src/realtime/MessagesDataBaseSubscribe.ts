@@ -35,8 +35,6 @@ export class MessagesDataBaseSubscribe {
       throw error;
     }
 
-    const chatIDs = (data ?? []).map((row) => row.chat_id);
-
     const channel = supabase
       .channel(`message:${user.id}`)
       .on(
@@ -45,10 +43,8 @@ export class MessagesDataBaseSubscribe {
           event: "INSERT",
           table: "message",
           schema: "public",
-          filter: `chat_id=in.(${chatIDs.join(",")})`,
         },
         async (payload) => {
-          console.log("new message recieved");
           try {
             const { data, error } = await supabase
               .from("message")
@@ -73,17 +69,13 @@ export class MessagesDataBaseSubscribe {
               new Date(data.time),
               data.sender_id,
             );
-            console.log("subscibed");
-
             await this.controller.newMessage(message);
           } catch (error) {
             throw error;
           }
         },
       )
-      .subscribe((error) => {
-        console.log("subscibed");
-      });
+      .subscribe((error) => {});
 
     if (error) {
       throw error;

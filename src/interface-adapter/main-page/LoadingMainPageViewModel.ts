@@ -1,5 +1,6 @@
 import { Business } from "@/entity/Business";
 import { BusinessRequested } from "@/entity/BusinessRequested";
+import { Role } from "@/entity/Role";
 import { Shift } from "@/entity/Shift";
 import { ViewModel } from "@/interface-adapter/ViewModel";
 import { CreateShiftState } from "../shift/create-shift/create-shift/CreateShiftState";
@@ -22,6 +23,7 @@ export class LoadingMainPageViewModel extends ViewModel {
   shifts: Shift[] | [] = [];
   businesses: Business[] | [] = [];
   businessRequested: BusinessRequested[] | [] = [];
+  role: Role | undefined = undefined;
 
   constructor(
     state:
@@ -41,6 +43,7 @@ export class LoadingMainPageViewModel extends ViewModel {
       this.businesses,
       businessRequested,
       this.shifts,
+      this.role,
     );
   }
 
@@ -49,6 +52,7 @@ export class LoadingMainPageViewModel extends ViewModel {
       this.businesses,
       this.businessRequested,
       newShifts,
+      this.role,
     );
   }
 
@@ -56,10 +60,12 @@ export class LoadingMainPageViewModel extends ViewModel {
     bus: Business[],
     busReq: BusinessRequested[],
     shifts: Shift[],
+    role: Role | undefined,
   ): void {
     this.businessRequested = busReq;
     this.businesses = bus;
     this.shifts = shifts;
+    this.role = role;
   }
 
   async firePropertyChange(): Promise<void> {

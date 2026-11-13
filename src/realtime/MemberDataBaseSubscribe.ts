@@ -73,10 +73,8 @@ export class MemberDataBaseSubscribe {
         },
       )
       .subscribe((status, error) => {
-        console.log("Members subscription status:", status);
-
         if (error) {
-          console.error("Members subscription error:", error);
+          throw error;
         }
       });
   }

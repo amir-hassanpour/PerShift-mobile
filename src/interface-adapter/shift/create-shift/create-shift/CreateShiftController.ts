@@ -1,6 +1,15 @@
 import { User } from "@/entity/User";
 import { CreateShiftInteractor } from "@/usecase/shift/create-shift/create-shift/CreateShiftInteractor";
 
+export type Input = {
+  startTime: Date | null;
+  endTime: Date | null;
+  address: string;
+  description: string;
+  users: User[];
+  businessID: string;
+};
+
 export class CreateShiftController {
   interactor: CreateShiftInteractor;
 
@@ -8,15 +17,7 @@ export class CreateShiftController {
     this.interactor = interactor;
   }
 
-  async eateShift(input: {
-    userToAdd: User[];
-    startTime: Date;
-    endTime: Date;
-    latitude: number | null;
-    longitude: number | null;
-    description: string | null;
-    businessID: string;
-  }) {
+  async createShift(input: Input) {
     await this.interactor.createShift(input);
   }
 }

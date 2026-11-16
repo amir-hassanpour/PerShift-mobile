@@ -16,7 +16,7 @@ export class CreateChatInteractor implements CreateChatInputBoundary {
 
   async createChat(input: CreateChatInputData): Promise<void> {
     try {
-      if (input.users.length < 2) {
+      if (input.users.length < 2 && input.isGroupChat) {
         this.outputBoundary.prepareForMinimumUserRequirementFailure();
         return;
       }

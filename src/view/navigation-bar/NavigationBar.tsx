@@ -20,7 +20,7 @@ const items = [
     icon: { ios: "book", android: "menu_book", web: "menu_book" },
   },
   {
-    label: "Performance",
+    label: "Hours",
     icon: { ios: "chart.bar", android: "bar_chart", web: "bar_chart" },
   },
   {
@@ -42,6 +42,7 @@ type NavigationBarProps = {
     | ["Home"]
     | ["Messages"]
     | ["Trainings"]
+    | ["Hours"]
     | ["Members"]
     | ["Profile"];
   onMainPress: () => void;
@@ -49,6 +50,7 @@ type NavigationBarProps = {
   onTrainingPress: () => void;
   onMembersPress: () => void;
   onProfilePress: () => void;
+  onHoursPress: () => void;
 };
 
 export class NavigationBar extends Component<NavigationBarProps> {
@@ -85,6 +87,11 @@ export class NavigationBar extends Component<NavigationBarProps> {
                 case "Profile":
                   this.props.activeIndex[0] = "Profile";
                   this.props.onProfilePress();
+                  break;
+
+                case "Hours":
+                  this.props.activeIndex[0] = "Hours";
+                  this.props.onHoursPress();
                   break;
               }
             }}

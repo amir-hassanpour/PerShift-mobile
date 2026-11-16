@@ -65,12 +65,15 @@ export class ChatsDataAccessObject
   async loadCreateGroupchatPage(
     input: LoadCreateGroupchatPageInput,
   ): Promise<LoadCreateGroupchatPageOutput> {
+    const user = await new UserRAMDisk().getCurrentUser();
+    if (!user)
+      throw new Error("Current user is not available in the local cache");
+
+    const members = await new MemberRAMDisk().getMembers();
+
     return {
-      users: (await new MemberRAMDisk().getMembers())
-        .filter(
-          async (member) =>
-            member.id !== (await new UserRAMDisk().getCurrentUser())?.id,
-        )
+      users: members
+        .filter((member) => member.id !== user.id && member.id !== user.id)
         .map((member) => member),
       businessID:
         (await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness())?.id ??

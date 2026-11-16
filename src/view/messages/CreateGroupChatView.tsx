@@ -16,6 +16,7 @@ import {
 import type { User } from "@/entity/User";
 
 import type { CreateChatController } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatController";
+import { CreateChatState } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatState";
 import type { CreateChatViewModel } from "@/interface-adapter/messages/create-chat/create-chat/CreateChatViewModel";
 import { LoadCreateGroupchatPageController } from "@/interface-adapter/messages/create-chat/load-create-group-chat-page/LoadCreateGroupchatPageController";
 import { LoadCreateGroupchatPageState } from "@/interface-adapter/messages/create-chat/load-create-group-chat-page/LoadCreateGroupchatPageState";
@@ -190,12 +191,28 @@ export default class CreateGroupChatView extends React.Component<
         businessID: this.props.loadViewModel.businessID,
       });
 
+      if (
+        this.props.createViewModel.state !== CreateChatState.SUCCESS_CREATE_CHAT
+      ) {
+        if (this.mounted) {
+          this.setState({
+            createError: "The group chat could not be created.",
+          });
+        }
+
+        return;
+      }
+
       const createdChat = this.props.createViewModel.chat;
 
       if (!createdChat) {
-        throw new Error(
-          "The group chat was not created. Select at least two members.",
-        );
+        if (this.mounted) {
+          this.setState({
+            createError: "Chat creation succeeded, but no chat was returned.",
+          });
+        }
+
+        return;
       }
 
       router.push({

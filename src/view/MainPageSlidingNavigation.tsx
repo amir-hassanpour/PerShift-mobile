@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type PageIndex = 0 | 1 | 2 | 3 | 4;
+type PageIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
 type MainSliderProps = {
   activeIndex:
@@ -16,7 +16,8 @@ type MainSliderProps = {
     | ["Messages"]
     | ["Trainings"]
     | ["Members"]
-    | ["Profile"];
+    | ["Profile"]
+    | ["Hours"];
   pages: readonly ReactNode[];
   renderNavigation: (props: {
     activeIndex: PageIndex;
@@ -80,6 +81,7 @@ export class MainPageSlidingNavigation extends Component<
       "Home",
       "Messages",
       "Trainings",
+      "Hours",
       "Members",
       "Profile",
     ] as const;

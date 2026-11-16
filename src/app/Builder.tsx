@@ -3,6 +3,7 @@ import { BusinessRAMDisk } from "@/data-access/business-shifts-data/BusinessRAMD
 import { BusinessShiftsRAMDisk } from "@/data-access/business-shifts-data/shift/BusinessShiftsRAMDisk";
 import { ChatsDataAccessObject } from "@/data-access/chats-messages-data/ChatsDataAccessObject";
 import { ChatsRAMDisk } from "@/data-access/chats-messages-data/ChatsRAMDisk";
+import { HoursDataAccessObject } from "@/data-access/hours-data/HoursDataAccessObject";
 import { MembersDataAccessObject } from "@/data-access/members/MembersDataAccessObject";
 import { ProfileDAO } from "@/data-access/profile-data-access/ProfileDAO";
 import { StartupSync } from "@/data-access/startup-sync/StartupSync";
@@ -12,6 +13,12 @@ import { TrainingsDataAccessObject } from "@/data-access/trainings/trainings-dat
 import { UserRAMDisk } from "@/data-access/user-data/UserRAMDisk";
 import { UserSignupDataAccessObject } from "@/data-access/user-data/UserSignupDataAccessObject";
 import { User } from "@/entity/User";
+import { CheckHoursController } from "@/interface-adapter/hours/check-hours/CheckHoursController";
+import { CheckHoursPresenter } from "@/interface-adapter/hours/check-hours/CheckHoursPresenter";
+import { CheckHoursViewModel } from "@/interface-adapter/hours/check-hours/CheckHoursViewModel";
+import { LoadHoursPageController } from "@/interface-adapter/hours/load-hours-page/LoadHoursPageController";
+import { LoadHoursPagePresenter } from "@/interface-adapter/hours/load-hours-page/LoadHoursPgaePresenter";
+import { LoadHoursPageViewModel } from "@/interface-adapter/hours/load-hours-page/LoadHoursPgaeViewModel";
 import { AcceptBusinessRequestController } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestController";
 import { AcceptBusinessRequestPresenter } from "@/interface-adapter/main-page/accept-business-request/AcceptBusinessRequestPresenter";
 import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/decline-business-request/DeclineBusinessRequestController";
@@ -84,6 +91,8 @@ import { MessagesDataBaseSubscribe } from "@/realtime/MessagesDataBaseSubscribe"
 import { ModuleDataBaseSubscribe } from "@/realtime/ModuleDataBaseSubscribe";
 import { ShiftDataBaseSubscribe } from "@/realtime/ShiftDataBaseSubsribe";
 import { TrainingDataBaseSubscribe } from "@/realtime/TrainingDataBaseSubscribe";
+import { CheckHoursInteractor } from "@/usecase/hours/check-hours/CheckHoursInteractor";
+import { LoadHoursPageInteractor } from "@/usecase/hours/load-hours-page/LoadHoursPageInteractor";
 import { AcceptBusinessRequestDataAccessInterface } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestDataAccessInterface";
 import { AcceptBusinessRequestInteractor } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestInteractor";
 import { AcceptBusinessRequestOutputBoundary } from "@/usecase/main-page/accep-business-request/AcceptBusinessRequestOutputBoundary";
@@ -117,6 +126,7 @@ import { NewModuleInteractor } from "@/usecase/trainings/training-page/new-modul
 import { UserSignupDataAccessInterface } from "@/usecase/user/user-signup/UserSignupDataAccessInterface";
 import { UserSignupInteractor } from "@/usecase/user/user-signup/UserSignupInteractor";
 import { UserSignupOutputBoundary } from "@/usecase/user/user-signup/UserSignupOutputBoundary";
+import { HoursPage } from "@/view/hours-page/HoursPage";
 import { CreateShiftView } from "@/view/main-page/CreateShiftView";
 import { MainPageView } from "@/view/main-page/MainPageView";
 import { MainPageSlidingNavigation } from "@/view/MainPageSlidingNavigation";
@@ -268,7 +278,8 @@ export default class Builder {
     | ["Messages"]
     | ["Trainings"]
     | ["Members"]
-    | ["Profile"] = ["Home"];
+    | ["Profile"]
+    | ["Hours"] = ["Home"];
 
   loadProfilePageViewmodel: LoadProfilePageViewModel =
     new LoadProfilePageViewModel();
@@ -337,6 +348,53 @@ export default class Builder {
     null;
   loadCreateGroupchatPageController: LoadCreateGroupchatPageController | null =
     null;
+
+  loadHoursPageViewModel: LoadHoursPageViewModel = new LoadHoursPageViewModel();
+  loadHoursPageDAO: HoursDataAccessObject | null = null;
+  loadHoursPageOutputBoundary: LoadHoursPagePresenter | null = null;
+  loadHoursPageInteractor: LoadHoursPageInteractor | null = null;
+  loadHoursPageController: LoadHoursPageController | null = null;
+
+  checkHoursViewModel: CheckHoursViewModel = new CheckHoursViewModel();
+  checkHoursDAO: HoursDataAccessObject | null = null;
+  checkHoursOutputBoundary: CheckHoursPresenter | null = null;
+  checkHoursInteractor: CheckHoursInteractor | null = null;
+  checkHoursController: CheckHoursController | null = null;
+
+  makeHoursPage(showScreen: (screen: ReactElement) => void): ReactElement {
+    this.loadHoursPageDAO = new HoursDataAccessObject();
+    this.loadHoursPageOutputBoundary = new LoadHoursPagePresenter(
+      this.loadHoursPageViewModel,
+    );
+    this.loadHoursPageInteractor = new LoadHoursPageInteractor(
+      this.loadHoursPageDAO,
+      this.loadHoursPageOutputBoundary,
+    );
+    this.loadHoursPageController = new LoadHoursPageController(
+      this.loadHoursPageInteractor,
+    );
+
+    this.checkHoursDAO = new HoursDataAccessObject();
+    this.checkHoursOutputBoundary = new CheckHoursPresenter(
+      this.checkHoursViewModel,
+    );
+    this.checkHoursInteractor = new CheckHoursInteractor(
+      this.checkHoursDAO,
+      this.checkHoursOutputBoundary,
+    );
+    this.checkHoursController = new CheckHoursController(
+      this.checkHoursInteractor,
+    );
+
+    return (
+      <HoursPage
+        loadHoursPageController={this.loadHoursPageController}
+        loadHoursPageViewModel={this.loadHoursPageViewModel}
+        checkHoursController={this.checkHoursController}
+        checkHoursViewModel={this.checkHoursViewModel}
+      />
+    );
+  }
 
   makeGroupchatPage(): ReactElement {
     this.loadCreateGroupchatPageDAO = new ChatsDataAccessObject();
@@ -794,6 +852,7 @@ export default class Builder {
           this.makeMainPageView(showScreen),
           this.makeMessagesPage(showScreen),
           this.makeTrainingsPage(showScreen),
+          this.makeHoursPage(showScreen),
           this.makeMembersPage(showScreen),
           this.makeProfiePage(showScreen),
         ]}
@@ -813,7 +872,7 @@ export default class Builder {
   }
 
   makeNavigationBar(
-    onSelect: (index: 0 | 1 | 2 | 3 | 4) => void,
+    onSelect: (index: 0 | 1 | 2 | 3 | 4 | 5) => void,
   ): ReactElement {
     return (
       <NavigationBar
@@ -828,10 +887,13 @@ export default class Builder {
           onSelect(2);
         }}
         onMembersPress={() => {
-          onSelect(3);
+          onSelect(4);
         }}
         onProfilePress={() => {
-          onSelect(4);
+          onSelect(5);
+        }}
+        onHoursPress={() => {
+          onSelect(3);
         }}
       />
     );

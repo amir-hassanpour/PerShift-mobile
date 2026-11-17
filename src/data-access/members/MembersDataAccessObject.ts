@@ -1,5 +1,10 @@
 import { User } from "@/entity/User";
 import {
+  AddMemberDAI,
+  AddMemberInput,
+  AddMemberOutput,
+} from "@/usecase/members/add-member/AddMemberDAI";
+import {
   LoadMembersInput,
   LoadMembersOutput,
   LoadMembersPageDataAccessInterface,
@@ -23,8 +28,25 @@ export class MembersDataAccessObject
   implements
     LoadMembersPageDataAccessInterface,
     NewMemberDataAccessInterface,
-    LoadCreateShiftPageDAI
+    LoadCreateShiftPageDAI,
+    AddMemberDAI
 {
+  async addMember(input: AddMemberInput): Promise<AddMemberOutput> {
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+    if (!business) throw new Error("No business available to add member to");
+
+    const { error } = await supabase.from("email_invitations").insert({
+      role_id: input.role.id,
+      email: input.email,
+      business_id: business.id,
+    });
+
+    if (error) throw error;
+
+    return {};
+  }
+
   async loadCreateShiftPage(
     input: LoadCreateShiftPageInput,
   ): Promise<LoadCreateShiftPageOutput> {

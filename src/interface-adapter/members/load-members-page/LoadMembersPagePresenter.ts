@@ -13,6 +13,9 @@ export class LoadMembersPagePresenter implements LoadMembersPageOutputBoundary {
   prepareForSuccsessView(outputData: LoadMembersPageOutputData): void {
     this.viewModel.members = outputData.members;
     this.viewModel.state = LoadMembersPageState.SUCCESS;
+    this.viewModel.roles = outputData.roles;
+    this.viewModel.canAddMembers = outputData.canAddMembers;
+
     this.viewModel.firePropertyChange();
   }
 

@@ -4,6 +4,7 @@ import { Role } from "@/entity/Role";
 import { Shift } from "@/entity/Shift";
 import { ViewModel } from "@/interface-adapter/ViewModel";
 import { CreateShiftState } from "../shift/create-shift/create-shift/CreateShiftState";
+import { LoadShiftsState } from "../shift/load-shifts/LoadShiftsState";
 import { NewShiftState } from "../shift/new-shift/NewShiftState";
 import { AcceptBusinessRequestState } from "./accept-business-request/AcceptBusinessRequestState";
 import { DeclineBusinessRequestState } from "./decline-business-request/DeclineBusinessRequestState";
@@ -19,10 +20,11 @@ export class LoadingMainPageViewModel extends ViewModel {
     | NewShiftState
     | NewBusinessState
     | NewBusinessRequestState
-    | CreateShiftState;
-  shifts: Shift[] | [] = [];
-  businesses: Business[] | [] = [];
-  businessRequested: BusinessRequested[] | [] = [];
+    | CreateShiftState
+    | LoadShiftsState;
+  shifts: Shift[] = [];
+  businesses: Business[] = [];
+  businessRequested: BusinessRequested[] = [];
   role: Role | undefined = undefined;
 
   constructor(

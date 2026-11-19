@@ -1,3 +1,4 @@
+import { Role } from "@/entity/Role";
 import { User } from "@/entity/User";
 import {
   AddMemberDAI,
@@ -32,18 +33,28 @@ export class MembersDataAccessObject
     AddMemberDAI
 {
   async addMember(input: AddMemberInput): Promise<AddMemberOutput> {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in");
+
     const business =
       await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
     if (!business) throw new Error("No business available to add member to");
 
-    const { error } = await supabase.from("email_invitations").insert({
+    const { error } = await supabase.from("email_invitation").insert({
       role_id: input.role.id,
       email: input.email,
       business_id: business.id,
+      inviter: user.id,
     });
 
-    if (error) throw error;
-
+    if (error) {
+      console.error(error);
+      throw error;
+    }
     return {};
   }
 
@@ -117,15 +128,104 @@ export class MembersDataAccessObject
     const members = await new MemberRAMDisk().getMembers();
     const curUser = await new UserRAMDisk().getCurrentUser();
 
-    if (curUser !== null) {
+    if (!curUser) throw new Error("No user found on disk");
+
+    const displayedMembers = [
+      curUser,
+      ...members.filter((member) => member.id !== curUser.id),
+    ];
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in");
+
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) {
       return {
-        members: [
-          curUser,
-          ...members.filter((member) => member.id !== curUser.id),
-        ],
+        members: displayedMembers,
+        canAddMembers: false,
+        roles: [],
       };
     }
 
-    return { members };
+    const { data: curUserRole, error: curUserRoleError } = await supabase
+      .from("roles")
+      .select(
+        `
+      id,
+      can_invite_members,
+      bra:business_role_assignment!inner(
+        profile_id,
+        business_name,
+        role_accepted
+      )
+    `,
+      )
+      .eq("bra.profile_id", user.id)
+      .eq("bra.business_name", business.id)
+      .eq("bra.role_accepted", "accepted")
+      .eq("business_id", business.id)
+      .maybeSingle();
+
+    if (curUserRoleError) throw curUserRoleError;
+
+    if (!curUserRole) {
+      throw new Error("User isn't assigned an accepted role in this business");
+    }
+
+    if (!curUserRole.can_invite_members) {
+      return {
+        members: displayedMembers,
+        canAddMembers: false,
+        roles: [],
+      };
+    }
+
+    const { data: assignableRoles, error: assignableRolesError } =
+      await supabase
+        .from("roles")
+        .select(
+          `
+        id,
+        role_name,
+        business_id,
+        can_invite_members,
+        can_create_shifts,
+        can_view_assigned_members_hours,
+        owner,
+        permissions:role_assignment_permissions!assignable_role_id!inner(
+          assigner_role_id
+        )
+      `,
+        )
+        .eq("permissions.assigner_role_id", curUserRole.id)
+        .eq("business_id", business.id);
+
+    if (assignableRolesError) throw assignableRolesError;
+
+    const roles = (assignableRoles ?? []).map(
+      (role) =>
+        new Role({
+          id: role.id,
+          roleName: role.role_name,
+          businessID: role.business_id,
+          canInviteMembers: role.can_invite_members,
+          canCreateShifts: role.can_create_shifts,
+          canViewAssignedMembersHours: role.can_view_assigned_members_hours,
+          owner: role.owner,
+        }),
+    );
+
+    return {
+      members: displayedMembers,
+      roles,
+      canAddMembers: true,
+    };
   }
 }

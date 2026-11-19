@@ -31,6 +31,8 @@ import { NewBusinessRequestController } from "@/interface-adapter/main-page/new-
 import { NewBusinessRequestPresenter } from "@/interface-adapter/main-page/new-business-request/NewBusinessRequestPresenter";
 import { NewBusinessController } from "@/interface-adapter/main-page/new-business/NewBusinessController";
 import { NewBusinessPresenter } from "@/interface-adapter/main-page/new-business/NewBusinessPresenter";
+import { AddMemberController } from "@/interface-adapter/members/add-member/AddMemberController";
+import { AddMemberPresenter } from "@/interface-adapter/members/add-member/AddMemberPresenter";
 import { LoadMembersPageController } from "@/interface-adapter/members/load-members-page/LoadMembersPageController";
 import { LoadMembersPagePresenter } from "@/interface-adapter/members/load-members-page/LoadMembersPagePresenter";
 import { LoadMembersPageViewModel } from "@/interface-adapter/members/LoadMembersPageViewModel";
@@ -104,6 +106,7 @@ import { LoadingMainPageInteractor } from "@/usecase/main-page/loading-main-page
 import { LoadingMainPageOutputBoundary } from "@/usecase/main-page/loading-main-page/LoadingMainPageOutputBoundary";
 import { NewBusinessRequestInteractor } from "@/usecase/main-page/new-business-request/NewBusinessRequestInteractor";
 import { NewBusinessInteractor } from "@/usecase/main-page/new-business/NewBusinessInteractor";
+import { AddMemberInteractor } from "@/usecase/members/add-member/AddMemberInteractor";
 import { LoadMembersPageInteractor } from "@/usecase/members/load-members-page/LoadMembersPageInteractor";
 import { NewMemberInteractor } from "@/usecase/members/new-member/NewMemberInteractor";
 import { LoadingChatPageInteractor } from "@/usecase/messages/chat-page/load-chat-page/LoadingChatPageInteractor";
@@ -360,6 +363,27 @@ export default class Builder {
   checkHoursOutputBoundary: CheckHoursPresenter | null = null;
   checkHoursInteractor: CheckHoursInteractor | null = null;
   checkHoursController: CheckHoursController | null = null;
+
+  addMemberDAO: MembersDataAccessObject | null = null;
+  addMemberOutputBoundary: AddMemberPresenter | null = null;
+  addMemberInteractor: AddMemberInteractor | null = null;
+  addMemberController: AddMemberController | null = null;
+
+  makeAddMember(): AddMemberController {
+    this.addMemberDAO = new MembersDataAccessObject();
+    this.addMemberOutputBoundary = new AddMemberPresenter(
+      this.loadMembersPageViewModel,
+    );
+    this.addMemberInteractor = new AddMemberInteractor(
+      this.addMemberOutputBoundary,
+      this.addMemberDAO,
+    );
+    this.addMemberController = new AddMemberController(
+      this.addMemberInteractor,
+    );
+
+    return this.addMemberController;
+  }
 
   makeHoursPage(showScreen: (screen: ReactElement) => void): ReactElement {
     this.loadHoursPageDAO = new HoursDataAccessObject();
@@ -637,6 +661,7 @@ export default class Builder {
       <MembersView
         viewModel={this.loadMembersPageViewModel}
         controller={this.loadMembersPageController}
+        addMemberController={this.makeAddMember()}
       />
     );
   }

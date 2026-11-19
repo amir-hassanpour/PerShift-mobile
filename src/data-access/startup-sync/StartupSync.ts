@@ -23,13 +23,26 @@ export class StartupSync {
 
     const businessID = await this.syncBusinesses();
 
-    if (!businessID) return;
+    if (!businessID) {
+      await this.deleteChatsAndMembers();
+      return;
+    }
 
     await this.syncChatsMessages(businessID);
     await this.syncMembers(businessID);
     await this.syncShifts(businessID);
     await this.syncTrainingsModules(businessID);
     await this.syncRole(businessID);
+  }
+
+  async deleteChatsAndMembers(): Promise<void> {
+    await new ChatsRAMDisk().deleteAllChats();
+    await new MessagesRAMDisk().deleteAllMessages();
+    await new MemberRAMDisk().deleteAllMembers();
+    await new BusinessShiftsRAMDisk().deleteAllShifts();
+    await new ModuleRAMDisk().deleteAllModules();
+    await new TrainingsRAMDisk().deleteAllTrainings();
+    await new RoleRAMDisk().deleteAllRoles();
   }
 
   async syncBusinesses(): Promise<string | null> {
@@ -164,14 +177,26 @@ export class StartupSync {
     };
 
     const snapshots: ChatSnapshot[] = [];
-    const pageSize = 100;
-    let offset = 0;
 
-    // Fetch every accessible chat before choosing the newest five.
-    const { data: chats, error } = await supabase
+    const { data: chats, error: chatsError } = await supabase
       .from("chat")
-      .select("id, business_id, self, name:chat_name, last_message_at, dm")
+      .select(
+        `
+      id,
+      business_id,
+      self,
+      name:chat_name,
+      last_message_at,
+      dm,
+      membership:chat_assignment!inner(
+        profile_id,
+        still_assigned
+      )
+    `,
+      )
       .eq("business_id", businessID)
+      .eq("membership.profile_id", user.id)
+      .eq("membership.still_assigned", true)
       .order("last_message_at", {
         ascending: false,
         nullsFirst: false,
@@ -179,44 +204,41 @@ export class StartupSync {
       .order("id", { ascending: true })
       .limit(5);
 
-    if (error) throw error;
-
+    if (chatsError) throw chatsError;
     if (!chats) throw new Error("Could not retrieve chats");
 
     for (const chatData of chats) {
-      const { data: chatAssignment, error: error2 } = await supabase
+      // Keep former participants in the name by not filtering still_assigned.
+      let participantsQuery = supabase
         .from("chat_assignment")
-        .select("profile_id")
-        .eq("chat_id", chatData.id)
-        .neq("profile_id", user.id)
-        .limit(3);
-
-      if (error2) throw error2;
-      if (!chatAssignment) throw new Error("chat not found");
-
-      const names = [];
-
-      for (const ids of chatAssignment) {
-        const { data: profile, error: error3 } = await supabase
-          .from("profiles")
-          .select("first_name, last_name")
-          .eq("profile_id", ids.profile_id)
-          .limit(1);
-
-        if (error3) throw error3;
-        if (!profile)
-          throw new Error("couldn't retrieve profile to construct chat name");
-
-        names.push(profile[0].first_name + " " + profile[0].last_name);
-      }
-      chatData.name = names.join(", ");
+        .select("profile_id, first_name, last_name")
+        .eq("chat_id", chatData.id);
 
       if (chatData.self === true) {
-        const curUser = await new UserRAMDisk().getCurrentUser();
-
-        if (!curUser) throw new Error("Current user is not save on disk");
-        chatData.name = curUser.firstName + " " + curUser.lastName;
+        participantsQuery = participantsQuery.eq("profile_id", user.id);
+      } else {
+        participantsQuery = participantsQuery.neq("profile_id", user.id);
       }
+
+      const { data: participants, error: participantsError } =
+        await participantsQuery
+          .order("profile_id", { ascending: true })
+          .limit(3);
+
+      if (participantsError) throw participantsError;
+      if (!participants) {
+        throw new Error(`Could not retrieve participants for ${chatData.id}`);
+      }
+
+      const names = participants
+        .map((participant) =>
+          [participant.first_name?.trim(), participant.last_name?.trim()]
+            .filter(Boolean)
+            .join(" "),
+        )
+        .filter((name) => name.length > 0);
+
+      const chatName = names.join(", ") || chatData.name || "Unnamed chat";
 
       const {
         data: messageData,
@@ -224,7 +246,9 @@ export class StartupSync {
         count,
       } = await supabase
         .from("message")
-        .select("id, chat_id, content, time, sender_id", { count: "exact" })
+        .select("id, chat_id, content, time, sender_id", {
+          count: "exact",
+        })
         .eq("chat_id", chatData.id)
         .order("time", { ascending: false })
         .order("id", { ascending: true })
@@ -257,7 +281,7 @@ export class StartupSync {
         chat: new Chat(
           chatData.id,
           chatData.business_id,
-          chatData.name,
+          chatName,
           newestMessage?.time,
           count ?? 0,
           newestMessage?.content ?? "",
@@ -266,33 +290,21 @@ export class StartupSync {
       });
     }
 
-    offset += chats.length;
-
-    // Chats with messages come first, newest activity first.
-    snapshots.sort((a, b) => {
-      const aTime = a.chat.lastTextedAt?.getTime();
-      const bTime = b.chat.lastTextedAt?.getTime();
-
-      if (aTime === undefined && bTime !== undefined) return 1;
-      if (aTime !== undefined && bTime === undefined) return -1;
-
-      if (aTime !== undefined && bTime !== undefined) {
-        const difference = bTime - aTime;
-        if (difference !== 0) return difference;
-      }
-
-      return a.chat.id.localeCompare(b.chat.id);
-    });
-
-    const selected = snapshots.slice(0, 5);
+    snapshots.sort(
+      (a, b) =>
+        (b.chat.lastTextedAt?.getTime() ?? -Infinity) -
+          (a.chat.lastTextedAt?.getTime() ?? -Infinity) ||
+        a.chat.id.localeCompare(b.chat.id),
+    );
 
     const chatsDisk = new ChatsRAMDisk();
     const messagesDisk = new MessagesRAMDisk();
 
-    await new ChatsRAMDisk().deleteAllChats();
-    await new MessagesRAMDisk().deleteAllMessages();
+    // All remote requests and entity validation succeeded.
+    await chatsDisk.deleteAllChats();
+    await messagesDisk.deleteAllMessages();
 
-    for (const { chat, messages } of selected) {
+    for (const { chat, messages } of snapshots) {
       await chatsDisk.saveChat(chat);
 
       for (const message of messages) {

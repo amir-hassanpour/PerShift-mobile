@@ -29,7 +29,23 @@ export class CreateShiftPresenter implements CreateShiftOutputBoundary {
   }
 
   prepareForSuccessView(output: CreateShiftOutputData): void {
-    this.viewModelMainPage.shifts = output.shifts;
+    for (const shift of output.shifts) {
+      let exists = false;
+      for (const shiftViewModel of this.viewModelMainPage.shifts) {
+        if (shift.shiftID === shiftViewModel.shiftID) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        this.viewModelMainPage.shifts.push(shift);
+      }
+    }
+    this.viewModelMainPage.shifts.sort(
+      (a, b) =>
+        a.startTime.getTime() - b.startTime.getTime() ||
+        a.shiftID.localeCompare(b.shiftID),
+    );
     this.viewModelMainPage.state = CreateShiftState.SUCCESS;
     this.viewModelCreateShift.state = CreateShiftState.SUCCESS;
     this.viewModelMainPage.firePropertyChange();

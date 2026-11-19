@@ -11,8 +11,24 @@ export class NewShiftPresenter implements NewShiftOutputBoundary {
   }
 
   async prepareForSuccessView(outputData: NewShiftOutputData): Promise<void> {
+    for (const shift of outputData.shifts) {
+      let exists = false;
+      for (const shiftViewModel of this.viewModel.shifts) {
+        if (shift.shiftID === shiftViewModel.shiftID) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        this.viewModel.shifts.push(shift);
+      }
+    }
     this.viewModel.state = NewShiftState.SUCCESS;
-    this.viewModel.setLoadingMainPageNewShift(outputData.shifts);
+    this.viewModel.shifts.sort(
+      (a, b) =>
+        a.startTime.getTime() - b.startTime.getTime() ||
+        a.shiftID.localeCompare(b.shiftID),
+    );
     this.viewModel.firePropertyChange();
   }
 

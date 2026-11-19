@@ -66,8 +66,10 @@ export class ChatsDataAccessObject
     input: LoadCreateGroupchatPageInput,
   ): Promise<LoadCreateGroupchatPageOutput> {
     const user = await new UserRAMDisk().getCurrentUser();
-    if (!user)
+
+    if (!user) {
       throw new Error("Current user is not available in the local cache");
+    }
 
     const members = await new MemberRAMDisk().getMembers();
 
@@ -91,7 +93,10 @@ export class ChatsDataAccessObject
     if (!user) throw new Error("You must be signed in");
 
     let selfChat = false;
-    if (input.users.length === 1) selfChat = input.users[0].id === user.id;
+
+    if (input.users.length === 1) {
+      selfChat = input.users[0].id === user.id;
+    }
 
     const { error } = await supabase.from("chat").insert({
       id: input.chat.id,
@@ -139,6 +144,7 @@ export class ChatsDataAccessObject
 
     if (chatName === "") {
       const userFirstName = await new UserRAMDisk().getCurrentUser();
+
       if (userFirstName) chatName = userFirstName.firstName;
       else chatName = "No Name";
     }
@@ -149,7 +155,9 @@ export class ChatsDataAccessObject
 
     const userToAddChats = await this.loadCreateChatPage({});
 
-    return { chats: [...userToAddChats.chats, ...userToAddChats.users] };
+    return {
+      chats: [...userToAddChats.chats, ...userToAddChats.users],
+    };
   }
 
   async messagesNotViewedNumber(chatID: string): Promise<number> {
@@ -166,28 +174,22 @@ export class ChatsDataAccessObject
     if (authError) throw authError;
     if (!user) throw new Error("You must be signed in");
 
-    const { data: chatAssignment, error: error2 } = await supabase
+    const { data: participants, error } = await supabase
       .from("chat_assignment")
-      .select("profile_id")
+      .select("first_name, last_name")
       .eq("chat_id", chatID)
       .neq("profile_id", user.id)
+      .order("profile_id", { ascending: true })
       .limit(3);
-    if (error2) throw error2;
-    if (!chatAssignment) throw new Error("chat not found");
-    const names = [];
-    for (const ids of chatAssignment) {
-      const { data: profile, error: error3 } = await supabase
-        .from("profiles")
-        .select("first_name, last_name")
-        .eq("profile_id", ids.profile_id)
-        .limit(1);
 
-      if (error3) throw error3;
-      if (!profile)
-        throw new Error("couldn't retrieve profile to construct chat name");
-      names.push(profile[0].first_name + " " + profile[0].last_name);
-    }
-    return names.join(", ");
+    if (error) throw error;
+
+    return (participants ?? [])
+      .map((person) =>
+        [person.first_name, person.last_name].filter(Boolean).join(" "),
+      )
+      .filter(Boolean)
+      .join(", ");
   }
 
   async chatEsists(input: ChatExistsInput): Promise<ChatExistsOutput> {
@@ -206,14 +208,16 @@ export class ChatsDataAccessObject
     const business =
       await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
 
-    if (business === null)
+    if (business === null) {
       throw new Error("Couldn't retrieve most recent buisness checked in");
+    }
 
     const { data, error } = await supabase
       .from("chat_assignment")
       .select("chat_id, profile_id, business_id")
       .eq("profile_id", user.id)
-      .eq("business_id", business.id);
+      .eq("business_id", business.id)
+      .eq("still_assigned", true);
 
     if (error) throw error;
     if (!data) return { chat: null };
@@ -222,34 +226,41 @@ export class ChatsDataAccessObject
       const { data: data2, error: error2 } = await supabase
         .from("chat")
         .select(
-          `id,
+          `
+          id,
           chat_name,
           business_id,
-          admin, 
+          admin,
           last_message_at,
           dm,
-        assigned:chat_assignment!inner(
-        profile_id, chat_id, business_id)`,
+          assigned:chat_assignment!inner(
+            profile_id,
+            chat_id,
+            business_id,
+            still_assigned
+          )
+        `,
         )
         .eq("id", chat.chat_id)
         .eq("assigned.profile_id", input.user.id)
+        .eq("assigned.still_assigned", true)
         .eq("dm", true)
         .limit(1);
 
       if (error2) throw error2;
-      if (data2)
-        if (data2.length > 0) {
-          return {
-            chat: new Chat(
-              data2[0].id,
-              data2[0].business_id,
-              data2[0].chat_name,
-              data2[0].last_message_at,
-              await this.messagesNotViewedNumber(data2[0].id),
-              "",
-            ),
-          };
-        }
+
+      if (data2 && data2.length > 0) {
+        return {
+          chat: new Chat(
+            data2[0].id,
+            data2[0].business_id,
+            data2[0].chat_name,
+            data2[0].last_message_at,
+            await this.messagesNotViewedNumber(data2[0].id),
+            "",
+          ),
+        };
+      }
     }
 
     return { chat: null };
@@ -264,21 +275,46 @@ export class ChatsDataAccessObject
     if (authError) throw authError;
     if (!user) throw new Error("You must be signed in");
 
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) {
+      throw new Error("Couldn't retrieve most recent buisness checked in");
+    }
+
     const { data: userSelfChat, error: errors } = await supabase
       .from("chat")
       .select(
-        `self, id, chat_name, business_id, admin, last_message_at, dm, chat_a:chat_assignment!inner(profile_id, chat_id)`,
+        `
+        self,
+        id,
+        chat_name,
+        business_id,
+        admin,
+        last_message_at,
+        dm,
+        chat_a:chat_assignment!inner(
+          profile_id,
+          chat_id,
+          still_assigned
+        )
+      `,
       )
       .eq("self", true)
-      .eq("chat_a.profile_id", user.id);
+      .eq("business_id", business.id)
+      .eq("chat_a.profile_id", user.id)
+      .eq("chat_a.still_assigned", true);
 
     if (errors) throw errors;
-    if (!userSelfChat)
+
+    if (!userSelfChat) {
       throw new Error(
         "Coudldn't access the users self chats in chat_assignment",
       );
+    }
 
     if (userSelfChat.length === 0) return null;
+
     return new Chat(
       userSelfChat[0].id,
       userSelfChat[0].business_id,
@@ -295,8 +331,9 @@ export class ChatsDataAccessObject
     const business =
       await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
 
-    if (!business)
+    if (!business) {
       throw new Error("no current business was found as the last checked in");
+    }
 
     const chats = await new ChatsRAMDisk().getChats();
     const members = await new MemberRAMDisk().getMembers();
@@ -308,14 +345,24 @@ export class ChatsDataAccessObject
     for (const chat of chats) {
       const { data: assignment, error: errorA } = await supabase
         .from("chat_assignment")
-        .select("profile_id, chat_id")
-        .eq("chat_id", chat.id);
+        .select(
+          `
+          profile_id,
+          chat_id,
+          chat:chat!inner(dm)
+        `,
+        )
+        .eq("chat_id", chat.id)
+        .eq("still_assigned", true)
+        .eq("chat.dm", true);
 
       if (errorA) throw errorA;
       if (!assignment) throw new Error("chat assignment not found");
 
       for (const user of assignment) {
-        if (membersID.has(user.profile_id)) membersID.delete(user.profile_id);
+        if (membersID.has(user.profile_id)) {
+          membersID.delete(user.profile_id);
+        }
       }
     }
 
@@ -331,19 +378,18 @@ export class ChatsDataAccessObject
       (await this.userSelfChat()) === null &&
       curUser &&
       !membersID.has(curUser.id)
-    )
+    ) {
       userToAdd.push(curUser);
+    }
 
     return {
-      chats: chats,
+      chats,
       users: userToAdd,
       businessID: business.id,
     };
   }
 
   async sendMessage(inputData: Message): Promise<OutputData> {
-    new MessagesRAMDisk().saveMessage(inputData);
-
     const {
       data: { user },
       error: authError,
@@ -362,7 +408,12 @@ export class ChatsDataAccessObject
       sender_id: user.id,
     });
 
-    if (error) console.error("Test insert failed:", error);
+    if (error) {
+      console.error("Test insert failed:", error);
+      throw error;
+    }
+
+    await new MessagesRAMDisk().saveMessage(inputData);
 
     const messagesOutput = await new MessagesRAMDisk().getMessages(
       inputData.chat_id,
@@ -376,6 +427,7 @@ export class ChatsDataAccessObject
 
     if (newChatInput.self) {
       const curUser = await new UserRAMDisk().getCurrentUser();
+
       if (curUser) {
         chatName = curUser.firstName + " " + curUser.lastName;
       }
@@ -394,9 +446,8 @@ export class ChatsDataAccessObject
     await new MessagesRAMDisk().saveMessage(message);
 
     const messages = await new MessagesRAMDisk().getMessages(message.chat_id);
-    return {
-      messages: messages,
-    };
+
+    return { messages };
   }
 
   async loadingChatPage({

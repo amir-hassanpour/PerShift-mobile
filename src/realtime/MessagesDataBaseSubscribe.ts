@@ -75,11 +75,7 @@ export class MessagesDataBaseSubscribe {
           }
         },
       )
-      .subscribe((error) => {});
-
-    if (error) {
-      throw error;
-    }
+      .subscribe((status, error) => {});
 
     // void sendTestMessage();
   }

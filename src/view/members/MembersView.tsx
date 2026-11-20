@@ -3,10 +3,10 @@ import { AddMemberController } from "@/interface-adapter/members/add-member/AddM
 import { AddMemberState } from "@/interface-adapter/members/add-member/AddMemberState";
 import { LoadMembersPageController } from "@/interface-adapter/members/load-members-page/LoadMembersPageController";
 import { LoadMembersPageViewModel } from "@/interface-adapter/members/LoadMembersPageViewModel";
+import { ScrollMembersController } from "@/interface-adapter/members/scroll-members/ScrollMembersController";
 import React from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Image,
   Pressable,
@@ -22,13 +22,14 @@ type Member = LoadMembersPageViewModel["members"][number];
 type Props = {
   controller: LoadMembersPageController;
   addMemberController: AddMemberController;
+  scrollMembersController: ScrollMembersController;
   viewModel: LoadMembersPageViewModel;
-  onMessagePress?: (member: Member) => void;
 };
 
 type State = {
   search: string;
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   expandedMemberId: Member["id"] | null;
   addExpanded: boolean;
@@ -40,7 +41,6 @@ type State = {
   success: string | null;
 };
 
-// Supports string roles and role objects with a name or label field.
 function roleLabel(role: unknown, index: number): string {
   let label = "";
 
@@ -101,6 +101,7 @@ export class MembersView extends React.Component<Props, State> {
   state: State = {
     search: "",
     loading: true,
+    loadingMore: false,
     error: null,
     expandedMemberId: null,
     addExpanded: false,
@@ -113,7 +114,11 @@ export class MembersView extends React.Component<Props, State> {
   };
 
   private mounted = false;
+  private loadInFlight = false;
   private addInFlight = false;
+  private scrollInFlight = false;
+  private canHandleBottom = false;
+  private bottomReachedCount = 0;
 
   componentDidMount() {
     this.mounted = true;
@@ -125,12 +130,20 @@ export class MembersView extends React.Component<Props, State> {
   }
 
   private loadMembers = async () => {
+    if (this.loadInFlight || this.scrollInFlight) return;
+
+    this.loadInFlight = true;
+    this.canHandleBottom = false;
+
     if (this.mounted) {
       this.setState({ loading: true, error: null });
     }
 
     try {
       await this.props.controller.loadMembers({});
+
+      // A fresh members page starts pagination again at 1.
+      this.bottomReachedCount = 0;
     } catch (error) {
       if (this.mounted) {
         this.setState({
@@ -139,8 +152,67 @@ export class MembersView extends React.Component<Props, State> {
         });
       }
     } finally {
+      this.loadInFlight = false;
+
       if (this.mounted) {
         this.setState({ loading: false });
+      }
+    }
+  };
+
+  private handleScrollBeginDrag = () => {
+    this.canHandleBottom =
+      !this.loadInFlight &&
+      !this.scrollInFlight &&
+      !this.addInFlight &&
+      !this.state.search.trim();
+  };
+
+  private handleEndReached = async () => {
+    if (
+      !this.canHandleBottom ||
+      this.loadInFlight ||
+      this.scrollInFlight ||
+      this.addInFlight ||
+      this.state.search.trim() ||
+      !this.props.viewModel.members.length
+    ) {
+      return;
+    }
+
+    this.canHandleBottom = false;
+    this.scrollInFlight = true;
+
+    const nextCount = this.bottomReachedCount + 1;
+
+    this.setState({
+      loadingMore: true,
+      error: null,
+    });
+
+    try {
+      // Sends 1, then 2, then 3 for successive bottom reaches.
+      // The presenter should append results to viewModel.members.
+      // This assumes scroll failures reject the controller's promise.
+      await this.props.scrollMembersController.scrollMembers({
+        numMembers: nextCount,
+      });
+
+      this.bottomReachedCount = nextCount;
+    } catch (error) {
+      if (this.mounted) {
+        this.setState({
+          error:
+            error instanceof Error
+              ? error.message
+              : "Unable to load more members.",
+        });
+      }
+    } finally {
+      this.scrollInFlight = false;
+
+      if (this.mounted) {
+        this.setState({ loadingMore: false });
       }
     }
   };
@@ -162,24 +234,19 @@ export class MembersView extends React.Component<Props, State> {
     }));
   };
 
-  private confirmMessage = (member: Member) => {
-    const name = `${member.firstName} ${member.lastName}`.trim();
-
-    Alert.alert("Send a message?", `Would you like to message ${name}?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Message",
-        onPress: () => this.props.onMessagePress?.(member),
-      },
-    ]);
-  };
-
   private readViewModelState = (): LoadMembersPageViewModel["state"] => {
     return this.props.viewModel.state;
   };
 
   private addMember = async () => {
-    if (this.addInFlight || !this.props.viewModel.canAddMembers) return;
+    if (
+      this.addInFlight ||
+      this.loadInFlight ||
+      this.scrollInFlight ||
+      !this.props.viewModel.canAddMembers
+    ) {
+      return;
+    }
 
     const email = this.state.email.trim().toLowerCase();
     const role = this.state.selectedRole;
@@ -201,13 +268,14 @@ export class MembersView extends React.Component<Props, State> {
     }
 
     this.addInFlight = true;
+    this.canHandleBottom = false;
+
     this.setState({
       adding: true,
       addError: null,
       success: null,
     });
 
-    // Clear the result from the previous attempt.
     this.props.viewModel.state = AddMemberState.IDLE_ADD_MEMBER;
 
     try {
@@ -229,8 +297,6 @@ export class MembersView extends React.Component<Props, State> {
             success: "Member added successfully.",
           });
 
-          // Reload only after reading the add-member result:
-          // loading members may change the shared view-model state.
           await this.loadMembers();
           break;
 
@@ -268,6 +334,7 @@ export class MembersView extends React.Component<Props, State> {
     const {
       search,
       loading,
+      loadingMore,
       error,
       expandedMemberId,
       addExpanded,
@@ -284,6 +351,8 @@ export class MembersView extends React.Component<Props, State> {
     const selectedIndex =
       selectedRole === null ? -1 : roles.indexOf(selectedRole);
 
+    const submitDisabled = adding || loading || loadingMore;
+
     const members = (viewModel.members ?? []).filter((member) =>
       `${member.firstName} ${member.lastName} ${member.username} ${member.email}`
         .toLowerCase()
@@ -299,17 +368,23 @@ export class MembersView extends React.Component<Props, State> {
             placeholderTextColor="#8190A7"
             accessibilityLabel="Search members"
             value={search}
-            onChangeText={(search) => this.setState({ search })}
+            onChangeText={(search) => {
+              this.canHandleBottom = false;
+              this.setState({ search });
+            }}
             autoCapitalize="none"
             autoCorrect={false}
           />
 
-          <FlatList
+          <FlatList<Member>
             data={members}
             extraData={this.state}
-            keyExtractor={(member) => member.id}
+            keyExtractor={(member) => String(member.id)}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
+            onScrollBeginDrag={this.handleScrollBeginDrag}
+            onEndReached={this.handleEndReached}
+            onEndReachedThreshold={0}
             ListHeaderComponent={
               <View>
                 {viewModel.canAddMembers && (
@@ -446,14 +521,14 @@ export class MembersView extends React.Component<Props, State> {
                             adding ? "Adding member" : "Add member"
                           }
                           accessibilityState={{
-                            disabled: adding,
+                            disabled: submitDisabled,
                             busy: adding,
                           }}
-                          disabled={adding}
+                          disabled={submitDisabled}
                           onPress={this.addMember}
                           style={({ pressed }) => [
                             styles.primaryButton,
-                            (adding || pressed) && styles.pressed,
+                            (submitDisabled || pressed) && styles.pressed,
                           ]}
                         >
                           {adding ? (
@@ -497,6 +572,14 @@ export class MembersView extends React.Component<Props, State> {
                 </Text>
               )
             }
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.loadingFooter}>
+                  <ActivityIndicator color="#2864EF" />
+                  <Text style={styles.loadingText}>Loading more members…</Text>
+                </View>
+              ) : undefined
+            }
             renderItem={({ item }) => {
               const name =
                 `${item.firstName} ${item.lastName}`.trim() || "No Name";
@@ -532,22 +615,6 @@ export class MembersView extends React.Component<Props, State> {
                       <Text selectable style={styles.value}>
                         {item.email}
                       </Text>
-
-                      {!!this.props.onMessagePress && (
-                        <Pressable
-                          accessibilityRole="button"
-                          accessibilityLabel={`Message ${name}`}
-                          onPress={() => this.confirmMessage(item)}
-                          style={({ pressed }) => [
-                            styles.primaryButton,
-                            pressed && styles.pressed,
-                          ]}
-                        >
-                          <Text style={styles.primaryButtonText}>
-                            Message {item.firstName}
-                          </Text>
-                        </Pressable>
-                      )}
                     </View>
                   )}
                 </View>
@@ -754,6 +821,15 @@ const styles = StyleSheet.create({
   },
   loading: {
     marginTop: 24,
+  },
+  loadingFooter: {
+    paddingVertical: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: "#8190A7",
   },
   empty: {
     textAlign: "center",

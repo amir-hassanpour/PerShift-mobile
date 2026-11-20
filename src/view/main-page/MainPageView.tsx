@@ -9,16 +9,59 @@ import { DeclineBusinessRequestController } from "@/interface-adapter/main-page/
 import { LoadingMainPageController } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageController";
 import { LoadingMainPageStates } from "@/interface-adapter/main-page/load-main-page/LoadingMainPageState";
 import { LoadingMainPageViewModel } from "@/interface-adapter/main-page/LoadingMainPageViewModel";
+import { LoadShiftsController } from "@/interface-adapter/shift/load-shifts/LoadShiftsController";
 import { router } from "expo-router";
+import type { NativeScrollEvent, NativeSyntheticEvent } from "react-native";
 
 type MainPageProps = {
   controller: LoadingMainPageController;
   viewModel: LoadingMainPageViewModel;
   declineBusinessRequestController: DeclineBusinessRequestController;
   acceptBusinessRequestController: AcceptBusinessRequestController;
+  loadShiftsController: LoadShiftsController;
 };
 
 export class MainPageView extends Component<MainPageProps> {
+  private loadingMore = false;
+  private scrollCount = 0;
+  private canLoadOnThisScroll = false;
+
+  handleScroll = async (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ): Promise<void> => {
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+
+    const distanceFromBottom =
+      contentSize.height - layoutMeasurement.height - contentOffset.y;
+
+    if (
+      distanceFromBottom > 100 ||
+      this.loadingMore ||
+      !this.canLoadOnThisScroll ||
+      this.props.viewModel.shifts.length === 0
+    ) {
+      return;
+    }
+
+    // Allow one request per scrolling gesture.
+    this.canLoadOnThisScroll = false;
+    this.loadingMore = true;
+
+    const nextScrollCount = this.scrollCount + 1;
+
+    try {
+      await this.props.loadShiftsController.loadShifts({
+        numShifts: nextScrollCount,
+      });
+
+      this.scrollCount = nextScrollCount;
+    } catch (error) {
+      console.error("Failed to load more shifts:", error);
+    } finally {
+      this.loadingMore = false;
+    }
+  };
+
   private unsubscribe?: () => void;
 
   componentDidMount(): void {
@@ -245,6 +288,11 @@ export class MainPageView extends Component<MainPageProps> {
             style={styles.scroll}
             contentContainerStyle={styles.content}
             showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            onScrollBeginDrag={() => {
+              this.canLoadOnThisScroll = true;
+            }}
+            onScroll={this.handleScroll}
           >
             {this.renderMainContent()}
           </ScrollView>

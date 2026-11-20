@@ -67,6 +67,6 @@ export class ModuleDataBaseSubscribe {
           }
         },
       )
-      .subscribe((error) => {});
+      .subscribe((status, error) => {});
   }
 }

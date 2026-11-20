@@ -11,13 +11,25 @@ export class NewMemberPresenter implements NewMemberOutputBoundary {
   }
 
   prepareForSuccessView(outputData: NewMemberOutputData): void {
-    this.viewModel.members = outputData.members;
+    for (const member of outputData.members) {
+      let exists = false;
+      for (const memberViewModel of this.viewModel.members) {
+        if (member.id === memberViewModel.id) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        this.viewModel.members.push(member);
+      }
+    }
     this.viewModel.state = NewMemberState.SUCCESS;
     this.viewModel.firePropertyChange();
   }
 
   prepareForFailureView(error: string): void {
     this.viewModel.state = NewMemberState.FAILURE;
+    this.viewModel.firePropertyChange();
     throw new Error(error);
   }
 }

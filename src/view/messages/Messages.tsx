@@ -1,42 +1,52 @@
-import { Chat } from "@/entity/Chat";
 import { LoadingMessagesPageController } from "@/interface-adapter/messages/loading-messages-page/LoadingMessagesPageController";
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
+import { ScrollChatsController } from "@/interface-adapter/messages/scroll-chats/ScrollChatsController";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SymbolView } from "expo-symbols";
-import { Component, ReactElement } from "react";
+import { Component, type ReactElement } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export type MessagesProps = {
   controller: LoadingMessagesPageController;
   viewModel: LoadingMessagesPageViewModel;
+  scrollViewController: ScrollChatsController;
   makeChatPage: (chat_id: string) => Promise<ReactElement>;
 };
 
-export type props = {
-  user_id: string;
-  chats: Chat[];
+type MessagesState = {
+  searchQuery: string;
+  loadingMore: boolean;
+  scrollError: string | null;
 };
 
-export class Messages extends Component<MessagesProps> {
-  state: {
-    activeChat: ReactElement | null;
-    searchQuery: string;
-  } = {
-    activeChat: null,
+export class Messages extends Component<MessagesProps, MessagesState> {
+  state: MessagesState = {
     searchQuery: "",
+    loadingMore: false,
+    scrollError: null,
   };
+
   private unsubscribe?: () => void;
+  private mounted = false;
+
+  private bottomHitCount = 0;
+  private bottomHitArmed = false;
+  private requestInFlight = false;
 
   componentDidMount(): void {
+    this.mounted = true;
     this.subscribeToViewModel();
 
     this.props.controller.loadMainPageController();
@@ -50,24 +60,103 @@ export class Messages extends Component<MessagesProps> {
   }
 
   componentWillUnmount(): void {
+    this.mounted = false;
     this.unsubscribe?.();
   }
 
   private subscribeToViewModel(): void {
     this.unsubscribe = this.props.viewModel.subscribe(() => {
-      this.forceUpdate();
+      if (this.mounted) {
+        this.forceUpdate();
+      }
     });
   }
 
-  render() {
-    if (this.state.activeChat) {
-      return this.state.activeChat;
-    }
-    const { chats, user_id }: props = {
-      chats: this.props.viewModel.chats,
-      user_id: this.props.viewModel.user_id,
-    };
+  private handleSearchChange = (searchQuery: string): void => {
+    // Filtering changes the list's size. Don't treat that as a bottom hit.
+    this.bottomHitArmed = false;
 
+    this.setState({
+      searchQuery,
+      scrollError: null,
+    });
+  };
+
+  private handleScrollBeginDrag = (): void => {
+    // Only a user gesture can arm the next bottom hit.
+    this.bottomHitArmed =
+      !this.requestInFlight && this.state.searchQuery.trim() === "";
+  };
+
+  private handleScroll = (
+    event: NativeSyntheticEvent<NativeScrollEvent>,
+  ): void => {
+    if (this.requestInFlight || this.state.searchQuery.trim() !== "") {
+      return;
+    }
+
+    const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+
+    const distanceFromBottom =
+      contentSize.height - layoutMeasurement.height - contentOffset.y;
+
+    // Leaving the bottom allows another hit when the user returns.
+    if (distanceFromBottom > 48) {
+      this.bottomHitArmed = true;
+      return;
+    }
+
+    if (distanceFromBottom <= 16) {
+      void this.handleBottomReached();
+    }
+  };
+
+  private handleBottomReached = async (): Promise<void> => {
+    if (
+      !this.mounted ||
+      !this.bottomHitArmed ||
+      this.requestInFlight ||
+      this.state.searchQuery.trim() !== "" ||
+      this.props.viewModel.chats.length === 0
+    ) {
+      return;
+    }
+
+    // Lock immediately so repeated scroll events cannot duplicate requests.
+    this.bottomHitArmed = false;
+    this.requestInFlight = true;
+    this.bottomHitCount += 1;
+
+    this.setState({
+      loadingMore: true,
+      scrollError: null,
+    });
+
+    try {
+      await this.props.scrollViewController.scrolleView({
+        numChats: this.bottomHitCount,
+      });
+
+      // Your existing view-model subscription refreshes the chat data.
+    } catch (error) {
+      console.error("Failed to load more chats:", error);
+
+      if (this.mounted) {
+        this.setState({
+          scrollError: "Could not load more chats.",
+        });
+      }
+    } finally {
+      this.requestInFlight = false;
+
+      if (this.mounted) {
+        this.setState({ loadingMore: false });
+      }
+    }
+  };
+
+  render() {
+    const chats = this.props.viewModel.chats ?? [];
     const query = this.state.searchQuery.trim().toLocaleLowerCase();
 
     const filteredChats = chats.filter((chat) =>
@@ -94,7 +183,9 @@ export class Messages extends Component<MessagesProps> {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Create chat"
-                onPress={() => router.push("/create-chat/CreateChatView")}
+                onPress={() => {
+                  router.push("/create-chat/CreateChatView");
+                }}
                 style={styles.composeButton}
               >
                 <SymbolView
@@ -124,7 +215,7 @@ export class Messages extends Component<MessagesProps> {
 
               <TextInput
                 value={this.state.searchQuery}
-                onChangeText={(searchQuery) => this.setState({ searchQuery })}
+                onChangeText={this.handleSearchChange}
                 placeholder="Search chats"
                 placeholderTextColor="#718099"
                 accessibilityLabel="Search chats by name"
@@ -144,10 +235,13 @@ export class Messages extends Component<MessagesProps> {
             style={styles.list}
             contentContainerStyle={styles.listContent}
             data={filteredChats}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
             keyExtractor={(chat) => chat.id}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            onScrollBeginDrag={this.handleScrollBeginDrag}
+            onScroll={this.handleScroll}
+            scrollEventThrottle={16}
             renderItem={({ item }) => {
               const names = item.name.trim().split(/\s+/);
               const first = Array.from(names[0] || "?")[0];
@@ -168,13 +262,17 @@ export class Messages extends Component<MessagesProps> {
               return (
                 <Pressable
                   accessibilityRole="button"
+                  accessibilityLabel={`Open chat with ${item.name}`}
                   onPress={() => {
                     router.push({
                       pathname: "/chat/[chatID]",
                       params: { chatID: item.id },
                     });
                   }}
-                  style={styles.chatRow}
+                  style={({ pressed }) => [
+                    styles.chatRow,
+                    pressed && styles.chatRowPressed,
+                  ]}
                 >
                   <View style={styles.avatar} accessible={false}>
                     <Text style={styles.initials}>
@@ -224,6 +322,26 @@ export class Messages extends Component<MessagesProps> {
                   <Text style={styles.emptyDetail}>Try a different name.</Text>
                 )}
               </View>
+            }
+            ListFooterComponent={
+              query === "" &&
+              (this.state.loadingMore || this.state.scrollError) ? (
+                <View style={styles.listFooter}>
+                  {this.state.loadingMore ? (
+                    <ActivityIndicator
+                      color="#2563EB"
+                      accessibilityLabel="Loading more chats"
+                    />
+                  ) : (
+                    <Text
+                      accessibilityLiveRegion="polite"
+                      style={styles.errorText}
+                    >
+                      {this.state.scrollError}
+                    </Text>
+                  )}
+                </View>
+              ) : undefined
             }
           />
         </View>
@@ -304,11 +422,9 @@ const styles = StyleSheet.create({
   },
   listHeader: {
     flexDirection: "row",
-    flexWrap: "wrap",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
     marginTop: 18,
+    marginBottom: 8,
   },
   listTitle: {
     color: "#152A4A",
@@ -330,6 +446,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#E7ECF3",
+  },
+  chatRowPressed: {
+    backgroundColor: "#F5F8FF",
   },
   avatar: {
     width: 56,
@@ -391,9 +510,15 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     textAlign: "center",
   },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 12,
+  listFooter: {
+    minHeight: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+  },
+  errorText: {
+    color: "#B42318",
+    fontSize: 13,
+    textAlign: "center",
   },
 });

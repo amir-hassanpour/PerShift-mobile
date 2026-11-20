@@ -28,6 +28,11 @@ import {
   NewBusinessInput,
   NewBusinessOutput,
 } from "@/usecase/main-page/new-business/NewBusinessDAI";
+import {
+  LoadShiftsDAI,
+  LoadShiftsInput,
+  LoadShiftsOutput,
+} from "@/usecase/shift/load-shifts/LoadShiftsDAI";
 import { RoleRAMDisk } from "../user-data/role/RoleRAMDisk";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "./shift/BusinessShiftsRAMDisk";
@@ -38,8 +43,85 @@ export class BussinessDataAccessObject
     DeclineBusinessRequestDataAccessInterface,
     AcceptBusinessRequestDataAccessInterface,
     NewBusinessDAI,
-    NewBusinessRequestDAI
+    NewBusinessRequestDAI,
+    LoadShiftsDAI
 {
+  async loadShifts(input: LoadShiftsInput): Promise<LoadShiftsOutput> {
+    if (!Number.isSafeInteger(input.numShifts) || input.numShifts < 0) {
+      throw new Error("Page number must be a non-negative integer");
+    }
+
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) {
+      throw new Error("No business is currently selected");
+    }
+
+    const pageSize = 5;
+    const from = input.numShifts * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await supabase
+      .from("shift")
+      .select(
+        `
+      id,
+      business_id,
+      start_time,
+      end_time,
+      latitude,
+      longitude,
+      description
+    `,
+      )
+      .eq("business_id", business.id)
+      .order("start_time", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data) throw new Error("Could not retrieve shifts");
+
+    const parseCoordinate = (value: string | number | null): number | null => {
+      if (value === null || String(value).trim() === "") {
+        return null;
+      }
+
+      const coordinate = Number(value);
+
+      if (!Number.isFinite(coordinate)) {
+        throw new Error("Shift contains an invalid coordinate");
+      }
+
+      return coordinate;
+    };
+
+    const shifts = data.map((row) => {
+      const startTime = new Date(row.start_time);
+      const endTime = new Date(row.end_time);
+
+      if (
+        !Number.isFinite(startTime.getTime()) ||
+        !Number.isFinite(endTime.getTime())
+      ) {
+        throw new Error(`Shift ${row.id} contains an invalid date`);
+      }
+
+      return new Shift(
+        startTime,
+        endTime,
+        parseCoordinate(row.latitude),
+        parseCoordinate(row.longitude),
+        row.business_id,
+        row.id,
+        row.description ?? "",
+      );
+    });
+
+    return { shifts };
+  }
+
   async newBusinessRequested(
     input: NewBusinessRequestInput,
   ): Promise<NewBusinessRequestOutput> {

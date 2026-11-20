@@ -1,6 +1,7 @@
 import { Chat } from "@/entity/Chat";
 import Storage from "expo-sqlite/kv-store";
 import { BusinessRAMDisk } from "../business-shifts-data/BusinessRAMDisk";
+import { ChatsDataAccessObject } from "./ChatsDataAccessObject";
 
 const CHATS_KEY = "chats";
 const MAX_CHATS = 5;
@@ -101,7 +102,7 @@ export class ChatsRAMDisk {
       }
     }
 
-    return;
+    return await new ChatsDataAccessObject().getChatByID(chat_id);
   }
 
   async deleteAllChats() {

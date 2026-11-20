@@ -16,6 +16,11 @@ import {
   NewMemberOutputData,
 } from "@/usecase/members/new-member/NewMemberDataAccessInterface";
 import {
+  ScrollMembersDAI,
+  ScrollMembersInput,
+  ScrollMembersOutput,
+} from "@/usecase/members/scroll-members/ScrollMembersDAI";
+import {
   LoadCreateShiftPageDAI,
   LoadCreateShiftPageInput,
   LoadCreateShiftPageOutput,
@@ -30,8 +35,73 @@ export class MembersDataAccessObject
     LoadMembersPageDataAccessInterface,
     NewMemberDataAccessInterface,
     LoadCreateShiftPageDAI,
-    AddMemberDAI
+    AddMemberDAI,
+    ScrollMembersDAI
 {
+  async scrollMembers(input: ScrollMembersInput): Promise<ScrollMembersOutput> {
+    if (!Number.isSafeInteger(input.numMembers) || input.numMembers < 0) {
+      throw new Error("Page number must be a non-negative integer");
+    }
+
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) {
+      throw new Error("No business is currently selected");
+    }
+
+    const pageSize = 10;
+    const from = input.numMembers * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        `
+      profile_id,
+      first_name,
+      last_name,
+      username,
+      email,
+      created_at,
+      avatar_url,
+      membership:business_role_assignment!inner(
+        business_name,
+        role_accepted
+      )
+    `,
+      )
+      .eq("membership.business_name", business.id)
+      .eq("membership.role_accepted", "accepted")
+      .order("first_name", { ascending: true })
+      .order("last_name", { ascending: true })
+      .order("profile_id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data) throw new Error("Could not retrieve members");
+
+    const members = data.map((row) => {
+      const createdAt = new Date(row.created_at);
+
+      if (!Number.isFinite(createdAt.getTime())) {
+        throw new Error(`Member ${row.profile_id} has an invalid date`);
+      }
+
+      return new User({
+        id: row.profile_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        username: row.username,
+        email: row.email,
+        createdAt,
+        avatarUrl: row.avatar_url ?? null,
+      });
+    });
+
+    return { members };
+  }
+
   async addMember(input: AddMemberInput): Promise<AddMemberOutput> {
     const {
       data: { user },

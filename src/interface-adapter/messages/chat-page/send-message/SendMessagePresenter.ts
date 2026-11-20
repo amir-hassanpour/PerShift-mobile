@@ -12,7 +12,21 @@ export class SendMessagePresenter implements SendMessageOutputBoundary {
   async prepareForSuccessView(
     outputData: SendMessageOutputData,
   ): Promise<void> {
-    this.viewModel.messages = outputData.messages;
+    for (const message of outputData.messages) {
+      let exists = false;
+      for (const messageViewModel of this.viewModel.messages) {
+        if (message.id === messageViewModel.id) {
+          exists = true;
+          break;
+        }
+      }
+      if (!exists) {
+        this.viewModel.messages.push(message);
+      }
+      this.viewModel.messages.sort(
+        (a, b) => a.time.getTime() - b.time.getTime(),
+      );
+    }
     this.viewModel.firePropertyChange();
   }
 

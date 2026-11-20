@@ -11,6 +11,11 @@ import {
   NewMessageOutput,
 } from "@/usecase/messages/chat-page/new-message/NewMessageDataAccessInterface";
 import {
+  ScrollMessagesDAI,
+  ScrollMessagesInput,
+  ScrollMessagesOutput,
+} from "@/usecase/messages/chat-page/scroll-messages/ScrollMessagesDAI";
+import {
   OutputData,
   SendMessageDataAccessInterface,
 } from "@/usecase/messages/chat-page/send-message/SendMessageDataAccessInterface";
@@ -43,6 +48,11 @@ import {
   NewChatInput,
   NewChatOutput,
 } from "@/usecase/messages/new-chat/NewChatDataAccessInterface";
+import {
+  ScrollChatsDAI,
+  ScrollChatsInput,
+  ScrollChatsOutput,
+} from "@/usecase/messages/scroll-chats/ScrollChatsDAI";
 import { BusinessRAMDisk } from "../business-shifts-data/BusinessRAMDisk";
 import { MemberRAMDisk } from "../members/MemberRAMDisk";
 import { supabase } from "../supabase/client";
@@ -60,8 +70,171 @@ export class ChatsDataAccessObject
     LoadCreateChatPageDAI,
     ChatExistsDAI,
     CreateChatDAI,
-    LoadCreateGroupchatPageDAI
+    LoadCreateGroupchatPageDAI,
+    ScrollMessagesDAI,
+    ScrollChatsDAI
 {
+  async scrollChats(input: ScrollChatsInput): Promise<ScrollChatsOutput> {
+    if (!Number.isSafeInteger(input.numChats) || input.numChats < 0) {
+      throw new Error("Page number must be a non-negative integer");
+    }
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError) throw authError;
+    if (!user) throw new Error("You must be signed in");
+
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) {
+      throw new Error("No business is currently selected");
+    }
+
+    const pageSize = 5;
+    const from = input.numChats * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await supabase
+      .from("chat")
+      .select(
+        `
+      id,
+      business_id,
+      chat_name,
+      self,
+      last_message_at,
+      membership:chat_assignment!inner(
+        profile_id,
+        still_assigned
+      )
+    `,
+      )
+      .eq("business_id", business.id)
+      .eq("membership.profile_id", user.id)
+      .eq("membership.still_assigned", true)
+      .order("last_message_at", {
+        ascending: false,
+        nullsFirst: false,
+      })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data) throw new Error("Could not retrieve chats");
+
+    const chats: Chat[] = [];
+
+    for (const row of data) {
+      let participantsQuery = supabase
+        .from("chat_assignment")
+        .select("first_name, last_name")
+        .eq("chat_id", row.id);
+
+      if (row.self) {
+        participantsQuery = participantsQuery.eq("profile_id", user.id);
+      } else {
+        participantsQuery = participantsQuery.neq("profile_id", user.id);
+      }
+
+      const { data: participants, error: participantsError } =
+        await participantsQuery
+          .order("profile_id", { ascending: true })
+          .limit(3);
+
+      if (participantsError) throw participantsError;
+
+      const name =
+        (participants ?? [])
+          .map((person) =>
+            [person.first_name, person.last_name].filter(Boolean).join(" "),
+          )
+          .filter(Boolean)
+          .join(", ") ||
+        row.chat_name ||
+        "Unnamed chat";
+
+      const {
+        data: messages,
+        error: messagesError,
+        count,
+      } = await supabase
+        .from("message")
+        .select("content", { count: "exact" })
+        .eq("chat_id", row.id)
+        .order("time", { ascending: false })
+        .order("id", { ascending: true })
+        .limit(1);
+
+      if (messagesError) throw messagesError;
+
+      const lastTextedAt =
+        row.last_message_at == null ? undefined : new Date(row.last_message_at);
+
+      if (
+        lastTextedAt !== undefined &&
+        !Number.isFinite(lastTextedAt.getTime())
+      ) {
+        throw new Error(`Chat ${row.id} contains an invalid date`);
+      }
+
+      chats.push(
+        new Chat(
+          row.id,
+          row.business_id,
+          name,
+          lastTextedAt,
+          count ?? 0,
+          messages?.[0]?.content ?? "",
+        ),
+      );
+    }
+
+    return { chats };
+  }
+
+  async scrollMessages(
+    input: ScrollMessagesInput,
+  ): Promise<ScrollMessagesOutput> {
+    if (!Number.isSafeInteger(input.numMessages) || input.numMessages < 0) {
+      throw new Error("Page number must be a non-negative integer");
+    }
+
+    const pageSize = 10;
+    const from = input.numMessages * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error } = await supabase
+      .from("message")
+      .select("id, chat_id, content, time, sender_id")
+      .eq("chat_id", input.chatID)
+      .order("time", { ascending: false })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) throw error;
+    if (!data) throw new Error("Could not retrieve messages");
+
+    const messages = data.map((row) => {
+      const time = new Date(row.time);
+
+      if (!Number.isFinite(time.getTime())) {
+        throw new Error(`Message ${row.id} contains an invalid date`);
+      }
+
+      return new Message(row.id, row.chat_id, row.content, time, row.sender_id);
+    });
+
+    messages.sort(
+      (a, b) => a.time.getTime() - b.time.getTime() || a.id.localeCompare(b.id),
+    );
+
+    return { messages };
+  }
+
   async loadCreateGroupchatPage(
     input: LoadCreateGroupchatPageInput,
   ): Promise<LoadCreateGroupchatPageOutput> {
@@ -448,6 +621,68 @@ export class ChatsDataAccessObject
     const messages = await new MessagesRAMDisk().getMessages(message.chat_id);
 
     return { messages };
+  }
+
+  async getChatByID(chatID: string): Promise<Chat | undefined> {
+    const business =
+      await new BusinessRAMDisk().getMostRecentlyCheckedInBusiness();
+
+    if (!business) throw new Error("No business is currently selected");
+
+    const { data, error } = await supabase
+      .from("chat")
+      .select("id, business_id, chat_name, self, last_message_at")
+      .eq("id", chatID)
+      .eq("business_id", business.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return undefined;
+
+    let name = await this.userAssignedToChat(chatID);
+
+    if (data.self) {
+      const user = await new UserRAMDisk().getCurrentUser();
+
+      if (user) {
+        name = `${user.firstName} ${user.lastName}`;
+      }
+    }
+
+    const { data: messageRetrieve, error: messageRetrieveError } =
+      await supabase
+        .from("message")
+        .select("id, chat_id, content, time, sender_id")
+        .eq("chat_id", data.id)
+        .order("time", { ascending: false })
+        .order("id", { ascending: true })
+        .limit(10);
+
+    if (messageRetrieveError) throw messageRetrieveError;
+    if (!messageRetrieve) throw new Error("Failed to retrieve chats messages");
+
+    const messagesChat: Message[] = messageRetrieve.map(
+      (message) =>
+        new Message(
+          message.id,
+          message.chat_id,
+          message.content,
+          new Date(message.time),
+          message.sender_id,
+        ),
+    );
+
+    for (const messageSave of messagesChat)
+      await new MessagesRAMDisk().saveMessage(messageSave);
+
+    return new Chat(
+      data.id,
+      data.business_id,
+      name || data.chat_name || "Unnamed chat",
+      data.last_message_at == null ? undefined : new Date(data.last_message_at),
+      0,
+      "",
+    );
   }
 
   async loadingChatPage({

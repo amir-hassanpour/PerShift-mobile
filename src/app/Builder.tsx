@@ -38,11 +38,15 @@ import { LoadMembersPagePresenter } from "@/interface-adapter/members/load-membe
 import { LoadMembersPageViewModel } from "@/interface-adapter/members/LoadMembersPageViewModel";
 import { NewMemberController } from "@/interface-adapter/members/new-member/NewMemberController";
 import { NewMemberPresenter } from "@/interface-adapter/members/new-member/NewMemberPresenter";
+import { ScrollMembersController } from "@/interface-adapter/members/scroll-members/ScrollMembersController";
+import { ScrollMembersPresenter } from "@/interface-adapter/members/scroll-members/ScrollMembersPresenter";
 import { LoadingChatPageController } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPageController";
 import { LoadingChatPagePresenter } from "@/interface-adapter/messages/chat-page/load-chat-page/LoadingChatPagePresenter";
 import { LoadingChatPageViewModel } from "@/interface-adapter/messages/chat-page/LoadingChatPageViewModel";
 import { NewMessageController } from "@/interface-adapter/messages/chat-page/new-message/NewMessageController";
 import { NewMessagePresenter } from "@/interface-adapter/messages/chat-page/new-message/NewMessagePresenter";
+import { ScrollMessagesController } from "@/interface-adapter/messages/chat-page/scroll-messages/ScrollMessagesController";
+import { ScrollMessagesPresenter } from "@/interface-adapter/messages/chat-page/scroll-messages/ScrollMessagesPresenter";
 import { SendMessageController } from "@/interface-adapter/messages/chat-page/send-message/SendMessageConttroller";
 import { SendMessagePresenter } from "@/interface-adapter/messages/chat-page/send-message/SendMessagePresenter";
 import { ChatExistsController } from "@/interface-adapter/messages/create-chat/chat-exists/ChatExistsController";
@@ -62,6 +66,8 @@ import { LoadingMessagesPagePresenter } from "@/interface-adapter/messages/loadi
 import { LoadingMessagesPageViewModel } from "@/interface-adapter/messages/LoadingMessagesPageViewModel";
 import { NewChatController } from "@/interface-adapter/messages/new-chat/NewChatController";
 import { NewChatPresenter } from "@/interface-adapter/messages/new-chat/NewChatPresenter";
+import { ScrollChatsController } from "@/interface-adapter/messages/scroll-chats/ScrollChatsController";
+import { ScrollChatsPresenter } from "@/interface-adapter/messages/scroll-chats/ScrollChatsPresenter";
 import { LoadProfilePageController } from "@/interface-adapter/profile/load-profile-page/LoadProfilePageController";
 import { LoadProfilePagePresenter } from "@/interface-adapter/profile/load-profile-page/LoadProfilePagePresenter";
 import { LoadProfilePageViewModel } from "@/interface-adapter/profile/LoadProfilePageViewModel";
@@ -70,6 +76,8 @@ import { CreateShiftPresenter } from "@/interface-adapter/shift/create-shift/cre
 import { LoadCreateShiftPageController } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageController";
 import { LoadCreateShiftPagePresenter } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPagePresenter";
 import { LoadCreateShiftPageViewModel } from "@/interface-adapter/shift/create-shift/LoadCreateShiftPageViewModel";
+import { LoadShiftsController } from "@/interface-adapter/shift/load-shifts/LoadShiftsController";
+import { LoadShiftsPresenter } from "@/interface-adapter/shift/load-shifts/LoadShiftsPresenter";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
 import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
@@ -109,8 +117,10 @@ import { NewBusinessInteractor } from "@/usecase/main-page/new-business/NewBusin
 import { AddMemberInteractor } from "@/usecase/members/add-member/AddMemberInteractor";
 import { LoadMembersPageInteractor } from "@/usecase/members/load-members-page/LoadMembersPageInteractor";
 import { NewMemberInteractor } from "@/usecase/members/new-member/NewMemberInteractor";
+import { ScrollMembersInteractor } from "@/usecase/members/scroll-members/ScrollMembersInteractor";
 import { LoadingChatPageInteractor } from "@/usecase/messages/chat-page/load-chat-page/LoadingChatPageInteractor";
 import { NewMessageInteractor } from "@/usecase/messages/chat-page/new-message/NewMessageInteractor";
+import { ScrollMessagesInteractor } from "@/usecase/messages/chat-page/scroll-messages/ScrollMessagesInteractor";
 import { SendMessageInteractor } from "@/usecase/messages/chat-page/send-message/SendMessageInteractor";
 import { ChatExistsInteractor } from "@/usecase/messages/create-chat/chat_exists/ChatExistsInteractor";
 import { CreateChatInteractor } from "@/usecase/messages/create-chat/create-chat/CreateChatInteractor";
@@ -118,9 +128,11 @@ import { LoadCreateChatPageInteractor } from "@/usecase/messages/create-chat/loa
 import { LoadCreateGroupchatPageInteractor } from "@/usecase/messages/create-chat/load-create-groupchat-page/LoadCreateGroupchatPageInteractor";
 import { LoadingMessagesPageInteractor } from "@/usecase/messages/loading-messages-page/LoadingMessagesPageInteractor";
 import { NewChatInteractor } from "@/usecase/messages/new-chat/NewChatInteractor";
+import { ScrollChatsInteractor } from "@/usecase/messages/scroll-chats/ScrollChatsInteractor";
 import { LoadProfilePageInteractor } from "@/usecase/profile/load-profile-page/LoadProfilePageInteractor";
 import { CreateShiftInteractor } from "@/usecase/shift/create-shift/create-shift/CreateShiftInteractor";
 import { LoadCreateShiftPageInteractor } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageInteractor";
+import { LoadShiftsInteractor } from "@/usecase/shift/load-shifts/LoadShiftsInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
 import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
 import { NewTrainingInteractor } from "@/usecase/trainings/new-training/NewTrainingInteractor";
@@ -368,6 +380,104 @@ export default class Builder {
   addMemberOutputBoundary: AddMemberPresenter | null = null;
   addMemberInteractor: AddMemberInteractor | null = null;
   addMemberController: AddMemberController | null = null;
+
+  loadShiftDAO: BussinessDataAccessObject | null = null;
+  loadShiftsOutputBoundary: LoadShiftsPresenter | null = null;
+  loadShiftsInteractor: LoadShiftsInteractor | null = null;
+  loadShiftsController: LoadShiftsController | null = null;
+
+  scrollMessagesDAO: ChatsDataAccessObject | null = null;
+  scrollMessagesOutputBoundary: ScrollMessagesPresenter | null = null;
+  scrollMessagesInteractor: ScrollMessagesInteractor | null = null;
+  scrollMessagesController: ScrollMessagesController | null = null;
+
+  scrollChatsDAO: ChatsDataAccessObject | null = null;
+  scrollChatsOutputBoundary: ScrollChatsPresenter | null = null;
+  scrollChatsInteractor: ScrollChatsInteractor | null = null;
+  scrollChatsController: ScrollChatsController | null = null;
+
+  scrollMembersDAO: MembersDataAccessObject | null = null;
+  scrollMembersOutputBoundary: ScrollMembersPresenter | null = null;
+  scrollMembersInteractor: ScrollMembersInteractor | null = null;
+  scrollMembersController: ScrollMembersController | null = null;
+
+  makeScrollMembers(): ScrollMembersController {
+    this.scrollMembersDAO = new MembersDataAccessObject();
+
+    this.scrollMembersOutputBoundary = new ScrollMembersPresenter(
+      this.loadMembersPageViewModel,
+    );
+
+    this.scrollMembersInteractor = new ScrollMembersInteractor(
+      this.scrollMembersDAO,
+      this.scrollMembersOutputBoundary,
+    );
+
+    this.scrollMembersController = new ScrollMembersController(
+      this.scrollMembersInteractor,
+    );
+
+    return this.scrollMembersController;
+  }
+
+  makeScrollChats(): ScrollChatsController {
+    this.scrollChatsDAO = new ChatsDataAccessObject();
+
+    this.scrollChatsOutputBoundary = new ScrollChatsPresenter(
+      this.loadingMessagesPageViewModel,
+    );
+
+    this.scrollChatsInteractor = new ScrollChatsInteractor(
+      this.scrollChatsDAO,
+      this.scrollChatsOutputBoundary,
+    );
+
+    this.scrollChatsController = new ScrollChatsController(
+      this.scrollChatsInteractor,
+    );
+
+    return this.scrollChatsController;
+  }
+
+  makeScrollMessages(chatID: string): ScrollMessagesController {
+    this.scrollMessagesDAO = new ChatsDataAccessObject();
+
+    let viewModel = this.loadingChatPageViewModel.get(chatID);
+
+    if (viewModel === undefined) {
+      viewModel = new LoadingChatPageViewModel();
+      this.loadingChatPageViewModel.set(chatID, viewModel);
+    }
+
+    this.scrollMessagesOutputBoundary = new ScrollMessagesPresenter(viewModel);
+
+    this.scrollMessagesInteractor = new ScrollMessagesInteractor(
+      this.scrollMessagesDAO,
+      this.scrollMessagesOutputBoundary,
+    );
+
+    this.scrollMessagesController = new ScrollMessagesController(
+      this.scrollMessagesInteractor,
+    );
+
+    return this.scrollMessagesController;
+  }
+
+  makeLoadShifts(): LoadShiftsController {
+    this.loadShiftDAO = new BussinessDataAccessObject();
+    this.loadShiftsOutputBoundary = new LoadShiftsPresenter(
+      this.loadingMainPageViewModel,
+    );
+    this.loadShiftsInteractor = new LoadShiftsInteractor(
+      this.loadShiftDAO,
+      this.loadShiftsOutputBoundary,
+    );
+    this.loadShiftsController = new LoadShiftsController(
+      this.loadShiftsInteractor,
+    );
+
+    return this.loadShiftsController;
+  }
 
   makeAddMember(): AddMemberController {
     this.addMemberDAO = new MembersDataAccessObject();
@@ -662,6 +772,7 @@ export default class Builder {
         viewModel={this.loadMembersPageViewModel}
         controller={this.loadMembersPageController}
         addMemberController={this.makeAddMember()}
+        scrollMembersController={this.makeScrollMembers()}
       />
     );
   }
@@ -830,6 +941,7 @@ export default class Builder {
         controller={this.loadingChatPageController}
         viewModel={newViewModel}
         sendMessageController={this.sendMessageController}
+        scrollMessagesController={this.makeScrollMessages(chat_id)}
       />
     );
   };
@@ -892,6 +1004,7 @@ export default class Builder {
         viewModel={this.loadingMessagesPageViewModel}
         controller={this.makeLoadingMessagesController()}
         makeChatPage={this.makeChatPage}
+        scrollViewController={this.makeScrollChats()}
       />
     );
   }
@@ -1007,6 +1120,7 @@ export default class Builder {
         viewModel={this.loadingMainPageViewModel}
         declineBusinessRequestController={this.makeDeclineBusinessRequestUsecase()}
         acceptBusinessRequestController={this.makeAcceptBusinessRequestUsecase()}
+        loadShiftsController={this.makeLoadShifts()}
       />
     );
   }

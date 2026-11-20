@@ -69,6 +69,6 @@ export class TrainingDataBaseSubscribe {
           }
         },
       )
-      .subscribe((error) => {});
+      .subscribe((status, error) => {});
   }
 }

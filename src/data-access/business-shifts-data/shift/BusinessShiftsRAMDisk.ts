@@ -73,7 +73,7 @@ export class BusinessShiftsRAMDisk
       }
     }
 
-    await this.saveShift(shift);
+    await this.saveShift(shift, true);
 
     return {
       shifts: await this.getBusinessShifts(shift.businessID),
@@ -91,6 +91,7 @@ export class BusinessShiftsRAMDisk
         inputData.id,
         inputData.description ?? "",
       ),
+      true,
     );
 
     const {
@@ -112,8 +113,9 @@ export class BusinessShiftsRAMDisk
     };
   }
 
-  async saveShift(shift: Shift): Promise<void> {
+  async saveShift(shift: Shift, shiftCreated: boolean = false): Promise<void> {
     const key = `${SHIFTS_KEY}:${shift.businessID}`;
+    const limitKey = `${key}:limit`;
 
     const storedShift: StoredShift = {
       startTime: shift.startTime.toISOString(),
@@ -127,11 +129,18 @@ export class BusinessShiftsRAMDisk
 
     const task = BusinessShiftsRAMDisk.shiftSaveQueue.then(async () => {
       const storedValue = await Storage.getItem(key);
+      const storedLimit = await Storage.getItem(limitKey);
 
       const existing: StoredShift[] =
         storedValue === null ? [] : JSON.parse(storedValue);
 
+      let limit = Math.max(5, existing.length, Number(storedLimit) || 5);
+
       const shiftsById = new Map(existing.map((item) => [item.shiftID, item]));
+
+      if (shiftCreated && !shiftsById.has(storedShift.shiftID)) {
+        limit += 1;
+      }
 
       shiftsById.set(storedShift.shiftID, storedShift);
 
@@ -141,12 +150,15 @@ export class BusinessShiftsRAMDisk
             new Date(a.startTime).getTime() - new Date(b.startTime).getTime() ||
             a.shiftID.localeCompare(b.shiftID),
         )
-        .slice(0, 5);
+        .slice(0, limit);
 
       await Storage.setItem(key, JSON.stringify(shifts));
+      await Storage.setItem(limitKey, String(limit));
     });
 
+    // Keep later saves running even if this save fails.
     BusinessShiftsRAMDisk.shiftSaveQueue = task.catch(() => {});
+
     await task;
   }
 

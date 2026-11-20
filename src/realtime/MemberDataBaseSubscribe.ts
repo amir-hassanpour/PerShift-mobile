@@ -19,7 +19,6 @@ export class MemberDataBaseSubscribe {
     this.businessID = businessID;
   }
 
-  // Keeps your existing method name so current callers still work.
   async membetSubscribe(): Promise<void> {
     if (this.starting) {
       await this.starting;

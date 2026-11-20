@@ -29,10 +29,20 @@ import {
   NewBusinessOutput,
 } from "@/usecase/main-page/new-business/NewBusinessDAI";
 import {
+  DeleteShiftDAI,
+  DeleteShiftInput,
+  DeleteShiftOutput,
+} from "@/usecase/shift/delete-shift/DeleteShiftDAI";
+import {
   LoadShiftsDAI,
   LoadShiftsInput,
   LoadShiftsOutput,
 } from "@/usecase/shift/load-shifts/LoadShiftsDAI";
+import {
+  UpdateShiftDAI,
+  UpdateShiftInput,
+  UpdateShiftOutput,
+} from "@/usecase/shift/update-shift/UpdateShiftDAI";
 import { RoleRAMDisk } from "../user-data/role/RoleRAMDisk";
 import { BusinessRAMDisk } from "./BusinessRAMDisk";
 import { BusinessShiftsRAMDisk } from "./shift/BusinessShiftsRAMDisk";
@@ -44,8 +54,21 @@ export class BussinessDataAccessObject
     AcceptBusinessRequestDataAccessInterface,
     NewBusinessDAI,
     NewBusinessRequestDAI,
-    LoadShiftsDAI
+    LoadShiftsDAI,
+    DeleteShiftDAI,
+    UpdateShiftDAI
 {
+  async updateShift(input: UpdateShiftInput): Promise<UpdateShiftOutput> {
+    await new BusinessShiftsRAMDisk().saveShift(input.shift);
+
+    return {};
+  }
+
+  async deleteShift(input: DeleteShiftInput): Promise<DeleteShiftOutput> {
+    await new BusinessShiftsRAMDisk().deleteShiftByID(input.shiftID);
+    return {};
+  }
+
   async loadShifts(input: LoadShiftsInput): Promise<LoadShiftsOutput> {
     if (!Number.isSafeInteger(input.numShifts) || input.numShifts < 0) {
       throw new Error("Page number must be a non-negative integer");

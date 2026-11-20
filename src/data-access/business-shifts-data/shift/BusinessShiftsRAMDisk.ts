@@ -30,6 +30,31 @@ export class BusinessShiftsRAMDisk
 {
   private static shiftSaveQueue: Promise<void> = Promise.resolve();
 
+  async deleteShiftByID(shiftID: string): Promise<void> {
+    const task = BusinessShiftsRAMDisk.shiftSaveQueue.then(async () => {
+      const keys = await Storage.getAllKeys();
+
+      const shiftKeys = keys.filter(
+        (key) => key.startsWith(`${SHIFTS_KEY}:`) && !key.endsWith(":limit"),
+      );
+
+      for (const key of shiftKeys) {
+        const value = await Storage.getItem(key);
+        if (value === null) continue;
+
+        const shifts: StoredShift[] = JSON.parse(value);
+        const remaining = shifts.filter((shift) => shift.shiftID !== shiftID);
+
+        if (remaining.length === shifts.length) continue;
+
+        await Storage.setItem(key, JSON.stringify(remaining));
+      }
+    });
+
+    BusinessShiftsRAMDisk.shiftSaveQueue = task.catch(() => {});
+    await task;
+  }
+
   async createShift(input: CreateShiftInput): Promise<createShiftOutput> {
     const {
       data: { user },

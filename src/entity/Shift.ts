@@ -6,6 +6,7 @@ export class Shift {
   public readonly description: string | null;
   public readonly businessID: string;
   public readonly shiftID: string;
+  public readonly owner: string | undefined;
 
   constructor(
     startTime: Date,
@@ -15,6 +16,7 @@ export class Shift {
     businessID: string,
     shiftID: string,
     description: string | null,
+    owner: string | undefined = undefined,
   ) {
     this.startTime = startTime;
     this.endTime = endTime;
@@ -23,5 +25,6 @@ export class Shift {
     this.description = description;
     this.businessID = businessID;
     this.shiftID = shiftID;
+    this.owner = owner;
   }
 }

@@ -64,8 +64,6 @@ export class ChatDataBaseSubscribe {
           }
         },
       )
-      .subscribe((status, error) => {
-        throw error;
-      });
+      .subscribe((status, error) => {});
   }
 }

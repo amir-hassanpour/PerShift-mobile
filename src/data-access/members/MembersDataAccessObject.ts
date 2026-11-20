@@ -191,6 +191,7 @@ export class MembersDataAccessObject
     if (curUser !== null) {
       members.unshift(curUser);
     }
+    console.log(members);
     return { members: members };
   }
 

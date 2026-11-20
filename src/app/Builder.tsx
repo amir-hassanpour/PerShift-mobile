@@ -76,10 +76,14 @@ import { CreateShiftPresenter } from "@/interface-adapter/shift/create-shift/cre
 import { LoadCreateShiftPageController } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPageController";
 import { LoadCreateShiftPagePresenter } from "@/interface-adapter/shift/create-shift/load-create-shift-page/LoadCreateShiftPagePresenter";
 import { LoadCreateShiftPageViewModel } from "@/interface-adapter/shift/create-shift/LoadCreateShiftPageViewModel";
+import { DeleteShiftController } from "@/interface-adapter/shift/delete-shift/DeleteShiftController";
+import { DeleteShiftPresenter } from "@/interface-adapter/shift/delete-shift/DeleteShiftPresenter";
 import { LoadShiftsController } from "@/interface-adapter/shift/load-shifts/LoadShiftsController";
 import { LoadShiftsPresenter } from "@/interface-adapter/shift/load-shifts/LoadShiftsPresenter";
 import { NewShiftController } from "@/interface-adapter/shift/new-shift/NewShiftController";
 import { NewShiftPresenter } from "@/interface-adapter/shift/new-shift/NewShiftPresenter";
+import { UpdateShiftController } from "@/interface-adapter/shift/update-shift/UpdateShiftController";
+import { UpdateShiftPresenter } from "@/interface-adapter/shift/update-shift/UpdateShiftPresenter";
 import { LoadTrainingsPageController } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPageController";
 import { LoadTrainingsPagePresenter } from "@/interface-adapter/training-page/load-trainings/LoadTrainingsPagePresenter";
 import { LoadTrainingsPageViewModel } from "@/interface-adapter/training-page/LoadTrainingsPageViewModel";
@@ -132,8 +136,10 @@ import { ScrollChatsInteractor } from "@/usecase/messages/scroll-chats/ScrollCha
 import { LoadProfilePageInteractor } from "@/usecase/profile/load-profile-page/LoadProfilePageInteractor";
 import { CreateShiftInteractor } from "@/usecase/shift/create-shift/create-shift/CreateShiftInteractor";
 import { LoadCreateShiftPageInteractor } from "@/usecase/shift/create-shift/load-create-shift-page/LoadCreateShiftPageInteractor";
+import { DeleteShiftInteractor } from "@/usecase/shift/delete-shift/DeleteShiftInteractor";
 import { LoadShiftsInteractor } from "@/usecase/shift/load-shifts/LoadShiftsInteractor";
 import { NewShiftInteractor } from "@/usecase/shift/new-shift/NewShiftInteractor";
+import { UpdateShiftInteractor } from "@/usecase/shift/update-shift/UpdateShiftInteractor";
 import { LoadTrainingsPageInteractor } from "@/usecase/trainings/load-trainings/LoadTrainingsPageInteractor";
 import { NewTrainingInteractor } from "@/usecase/trainings/new-training/NewTrainingInteractor";
 import { LoadTrainingPageInteractor } from "@/usecase/trainings/training-page/load-training-page/LoadTrainingPageInteractor";
@@ -400,6 +406,51 @@ export default class Builder {
   scrollMembersOutputBoundary: ScrollMembersPresenter | null = null;
   scrollMembersInteractor: ScrollMembersInteractor | null = null;
   scrollMembersController: ScrollMembersController | null = null;
+
+  deleteShiftDAO: BussinessDataAccessObject | null = null;
+  deleteShiftOutputBoundary: DeleteShiftPresenter | null = null;
+  deleteShiftInteractor: DeleteShiftInteractor | null = null;
+  deleteShiftController: DeleteShiftController | null = null;
+
+  updateShiftDAO: BussinessDataAccessObject | null = null;
+  updateShiftOutputBoundary: UpdateShiftPresenter | null = null;
+  updateShiftInteractor: UpdateShiftInteractor | null = null;
+  updateShiftController: UpdateShiftController | null = null;
+
+  makeUpdateShift(): UpdateShiftController {
+    this.updateShiftDAO = new BussinessDataAccessObject();
+    this.updateShiftOutputBoundary = new UpdateShiftPresenter(
+      this.loadingMainPageViewModel,
+    );
+    this.updateShiftInteractor = new UpdateShiftInteractor(
+      this.updateShiftDAO,
+      this.updateShiftOutputBoundary,
+    );
+    this.updateShiftController = new UpdateShiftController(
+      this.updateShiftInteractor,
+    );
+
+    return this.updateShiftController;
+  }
+
+  makeDeleteShift(): DeleteShiftController {
+    this.deleteShiftDAO = new BussinessDataAccessObject();
+
+    this.deleteShiftOutputBoundary = new DeleteShiftPresenter(
+      this.loadingMainPageViewModel,
+    );
+
+    this.deleteShiftInteractor = new DeleteShiftInteractor(
+      this.deleteShiftDAO,
+      this.deleteShiftOutputBoundary,
+    );
+
+    this.deleteShiftController = new DeleteShiftController(
+      this.deleteShiftInteractor,
+    );
+
+    return this.deleteShiftController;
+  }
 
   makeScrollMembers(): ScrollMembersController {
     this.scrollMembersDAO = new MembersDataAccessObject();
@@ -1050,7 +1101,11 @@ export default class Builder {
     );
     this.newShiftController = new NewShiftController(this.newShiftInteractor);
 
-    return new ShiftDataBaseSubscribe({ controller: this.newShiftController });
+    return new ShiftDataBaseSubscribe({
+      controller: this.newShiftController,
+      controllerDelete: this.makeDeleteShift(),
+      controllerUpdate: this.makeUpdateShift(),
+    });
   }
 
   makeAcceptBusinessRequestUsecase(): AcceptBusinessRequestController {

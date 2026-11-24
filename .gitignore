@@ -41,3 +41,12 @@ example
 # generated native folders
 /ios
 /android
+
+
+# secrets (never commit real keys)
+.env
+.env.*
+!.env.example
+
+# recovery leftovers
+*.before-recovery
